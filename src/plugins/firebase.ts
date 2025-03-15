@@ -6,15 +6,14 @@ import { getStorage } from "firebase/storage";
 
 // 🔹 Replace with your Firebase config
 const firebaseConfig = {
-    apiKey: "AIzaSyCC3nMaHPTc0yGAV39UnPDHLaA0EyciyDQ",
-    authDomain: "tu-diploma.firebaseapp.com",
-    projectId: "tu-diploma",
-    storageBucket: "tu-diploma.firebasestorage.app",
-    messagingSenderId: "881405661200",
-    appId: "1:881405661200:web:54016e3fbac2d34ce47a95",
-    measurementId: "G-4VZ48K7YVZ"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
   };
-  
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
