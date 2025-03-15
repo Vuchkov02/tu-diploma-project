@@ -107,29 +107,6 @@ const signup = async () => {
   }
 };
 
-// Google Sign-In
-const googleSignIn = async () => {
-  try {
-    const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-
-    // Store Google user in Firestore
-    await setDoc(
-      doc(db, "users", user.uid),
-      {
-        username: user.displayName || "Unknown",
-        email: user.email,
-      },
-      { merge: true }
-    );
-
-    alert("✅ Logged in with Google!");
-    closeModal();
-  } catch (error) {
-    alert(error);
-  }
-};
 
 // **Expose for HeroPage.vue**
 defineExpose({ showDialog, isLogin });

@@ -1,46 +1,47 @@
 <template>
-    <v-app-bar app color="primary" dark>
-      <v-container class="d-flex align-center">
-        <!-- 🏠 Home Icon -->
-        <v-btn icon @click="goHome">
-          <v-icon>mdi-home</v-icon>
-        </v-btn>
-  
-        <!-- 👤 Profile Icon -->
-        <v-btn icon>
+  <v-app-bar app color="primary" dark>
+    <v-container class="d-flex align-center px-0" fluid>
+      <!-- Profile Info on the Left -->
+      <div class="d-flex align-center">
+        <v-btn icon class="ml-2">
           <v-icon>mdi-account</v-icon>
         </v-btn>
-  
-        <!-- ⚙️ Settings Icon -->
-        <v-btn icon>
-          <v-icon>mdi-cog</v-icon>
-        </v-btn>
-  
-        <!-- Spacer to push logout button to the right -->
-        <v-spacer></v-spacer>
-  
-        <!-- 🚪 Logout Button -->
-        <v-btn color="error" @click="logout">
-          <v-icon left>mdi-logout</v-icon> Logout
-        </v-btn>
-      </v-container>
-    </v-app-bar>
-  </template>
-  
-  <script setup lang="ts">
-  import { useRouter } from "vue-router";
-  import { auth } from "@/plugins/firebase";
-  import { signOut } from "firebase/auth";
-  
-  const router = useRouter();
-  
-  // Go to Home
-  const goHome = () => {
-    router.push("/");
-  };
-  
-  // Logout
-  const logout = async () => {
+        <span class="ml-2">Hello, {{ user?.displayName || "User" }}</span>
+      </div>
+
+      <!-- Profile Section: Centered Username Placeholder -->
+      <div class="flex-grow-1 d-flex justify-center">
+        <span class="text-h6 font-weight-bold">Placeholder Name</span>
+      </div>
+
+      <!-- 🚪 Logout Button on the Far Right -->
+      <v-btn icon color="error" @click="logout" class="mr-2">
+        <v-icon>mdi-logout</v-icon>
+      </v-btn>
+    </v-container>
+  </v-app-bar>
+</template>
+
+<script setup lang="ts">
+import { useRouter } from "vue-router";
+import { ref, onMounted } from "vue";
+import { auth } from "@/plugins/firebase";
+import { signOut, onAuthStateChanged } from "firebase/auth";
+
+const router = useRouter();
+const user = ref(auth.currentUser);
+
+// Watch for authentication state changes
+onMounted(() => {
+  onAuthStateChanged(auth, async (currentUser) => {
+    if (currentUser) {
+      await currentUser.reload(); // 🔄 Ensures latest data
+      user.value = auth.currentUser; // ✅ Now it should have `displayName`
+    }
+  });
+});
+// Logout
+const logout = async () => {
   try {
     await signOut(auth);
     sessionStorage.clear(); // ✅ Ensure session is cleared
@@ -49,5 +50,4 @@
     console.error("Logout Error:", error);
   }
 };
-  </script>
-  
+</script>

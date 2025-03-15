@@ -1,11 +1,13 @@
 <template>
   <v-app class="background">
-    <!-- ✅ Navbar only visible if logged in -->
-    <NavBar v-if="showNavBar" />
-
-    <v-container>
-      <router-view /> <!-- Dynamically render the current page -->
-    </v-container>
+    <!-- Navbar always takes up space and pushes content down -->
+    
+    <NavBar v-if="showNavBar" class="navbar" />
+    <v-main class="main-content">
+      <v-container>
+        <router-view />
+      </v-container>
+    </v-main>
   </v-app>
 </template>
 <script setup lang="ts">
@@ -110,8 +112,38 @@ onUnmounted(() => {
   overflow-y: auto;
 }
 .background {
-  background: url("@/assets/background-main.jpg") no-repeat center center fixed;
+  background: url("@/assets/background-main.webp") no-repeat center center fixed;
   background-size: cover;
   min-height: 100vh;
+}
+.navbar {
+  width: 100%;
+  z-index: 10;
+}
+
+.main-content {
+  flex-grow: 1; /* Makes the main content take up the remaining space */
+  display: flex;
+  flex-direction: column;
+  margin-top: 64px; /* Adjust this based on your NavBar height */
+}
+
+.v-container {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+.v-application, 
+.v-btn, 
+.v-card-title, 
+.v-card-subtitle, 
+.v-card-text, 
+.v-chip, 
+.v-list-item-title, 
+.v-list-item-subtitle, 
+.v-tab, 
+.v-toolbar-title, 
+.v-footer {
+  font-family: 'Bangers', cursive !important;
 }
 </style>
