@@ -25,7 +25,8 @@
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "vue": "^3.4.31",
-    "vuetify": "^3.7.16"
+    "vuetify": "^3.7.16",
+    "vuex": "^4.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",

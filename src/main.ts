@@ -15,7 +15,7 @@ const vuetify = createVuetify({
         dark: false, // Set to true if using dark mode
         colors: {}, // Define theme colors if needed
         variables: {
-          "font-family-base": "Bangers, cursive",
+          "font-family-base": "DynaPuff",
         },
       },
     },

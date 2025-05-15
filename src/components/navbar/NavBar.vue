@@ -10,8 +10,16 @@
       </div>
 
       <!-- Profile Section: Centered Username Placeholder -->
-      <div class="flex-grow-1 d-flex justify-center">
-        <span class="text-h6 font-weight-bold">Placeholder Name</span>
+      <div
+        class="flex-grow-1 d-flex justify-center"
+        style="margin-right: 180px"
+      >
+        <span
+          class="text-h6 font-weight-bold"
+          style="font-family: 'DynaPuff', cursive"
+        >
+          DRAW & GUESS
+        </span>
       </div>
 
       <!-- 🚪 Logout Button on the Far Right -->

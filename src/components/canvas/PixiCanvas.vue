@@ -192,8 +192,6 @@ onUnmounted(() => {
 
 <style scoped>
 .canvas-container {
-  width: 600px;
-  height: 400px;
   border: 2px solid #000;
 }
 </style>

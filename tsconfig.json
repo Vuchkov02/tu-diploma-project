@@ -1,4 +1,13 @@
 {
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "module": "esnext",
+    "target": "esnext",
+    "types": ["vite/client"],
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
   "files": [],
   "references": [
     {

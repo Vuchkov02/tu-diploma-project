@@ -1,7 +1,7 @@
 <template>
   <v-app class="background">
     <!-- Navbar always takes up space and pushes content down -->
-    
+
     <NavBar v-if="showNavBar" class="navbar" />
     <v-main class="main-content">
       <v-container>
@@ -99,12 +99,11 @@ onUnmounted(() => {
 <style scoped>
 .game-area {
   display: flex;
-  justify-content: center; 
-  align-items: flex-start; 
+  justify-content: center;
+  align-items: flex-start;
   gap: 20px;
-  flex-wrap: wrap; 
+  flex-wrap: wrap;
 }
-
 
 .chat-box {
   width: 300px;
@@ -133,17 +132,15 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
 }
-.v-application, 
-.v-btn, 
-.v-card-title, 
-.v-card-subtitle, 
-.v-card-text, 
-.v-chip, 
-.v-list-item-title, 
-.v-list-item-subtitle, 
-.v-tab, 
-.v-toolbar-title, 
-.v-footer {
-  font-family: 'Bangers', cursive !important;
+*,
+*::before,
+*::after {
+  font-family: "DynaPuff", sans-serif !important;
+}
+
+body,
+html,
+.v-application {
+  font-family: "DynaPuff", sans-serif !important;
 }
 </style>
