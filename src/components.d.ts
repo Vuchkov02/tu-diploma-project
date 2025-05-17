@@ -20,5 +20,6 @@ declare module 'vue' {
     Register: typeof import('./components/authentication/Register.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    WordChoice: typeof import('./components/canvas/WordChoice.vue')['default']
   }
 }

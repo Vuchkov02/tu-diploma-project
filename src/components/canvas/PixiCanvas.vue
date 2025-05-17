@@ -2,7 +2,9 @@
   <div ref="canvasContainer" class="canvas-container">
     <canvas id="pixi-canvas"></canvas>
   </div>
-  <v-btn color="error" class="mt-2" @click="clearCanvas">Clear</v-btn>
+  <v-btn color="error" class="mt-2" @click="clearCanvas" :disabled="!isDrawer">
+    Clear
+  </v-btn>
 </template>
 
 <script setup lang="ts">
@@ -15,11 +17,14 @@ let app: PIXI.Application | null = null;
 let graphics: PIXI.Graphics | null = null;
 let drawing = false;
 let canvas: HTMLCanvasElement | null = null;
+
 const strokeColor = ref(0x000000); // Default black
 const strokeWidth = ref(2); // Default width
+const isDrawer = ref(false); // ⬅️ само рисувачът може да рисува
+
 // Start drawing
 const startDraw = (event: MouseEvent) => {
-  if (!app) return;
+  if (!app || !isDrawer.value) return;
   drawing = true;
   lastPos = null;
 
@@ -42,7 +47,7 @@ const startDraw = (event: MouseEvent) => {
 let lastPos: { x: number; y: number } | null = null;
 
 const draw = (event: MouseEvent) => {
-  if (!drawing || !graphics) return;
+  if (!drawing || !graphics || !isDrawer.value) return;
 
   const pos = getMousePosition(event);
 
@@ -66,15 +71,13 @@ const draw = (event: MouseEvent) => {
 
 const stopDraw = () => {
   drawing = false;
-  lastPos = null; // Reset last position when drawing stops
-
-  graphics = null; // **Forget the last stroke completely**
+  lastPos = null;
+  graphics = null;
 };
 
 // Get mouse position relative to canvas
 const getMousePosition = (event: MouseEvent) => {
   if (!canvas) return { x: 0, y: 0 };
-
   const rect = canvas.getBoundingClientRect();
   return {
     x: event.clientX - rect.left,
@@ -84,8 +87,12 @@ const getMousePosition = (event: MouseEvent) => {
 
 // Clear the canvas
 const clearCanvas = () => {
-  if (!graphics) return;
-  graphics.clear();
+  if (!isDrawer.value) return;
+
+  app?.stage.removeChildren(); // маха всичко от сцената
+  graphics = new PIXI.Graphics();
+  app?.stage.addChild(graphics);
+
   socket.emit("clear_canvas");
 };
 
@@ -93,45 +100,44 @@ const clearCanvas = () => {
 let lastReceivedPos: { x: number; y: number } | null = null;
 
 const setupSocketListeners = () => {
-  socket.on(
-    "start_draw",
-    (data: { x: number; y: number; color: number; width: number }) => {
-      if (!app) return;
+  socket.on("start_draw", (data) => {
+    if (!app) return;
 
-      lastReceivedPos = null;
-      graphics = new PIXI.Graphics();
-      app.stage.addChild(graphics);
+    lastReceivedPos = null;
+    graphics = new PIXI.Graphics();
+    app.stage.addChild(graphics);
 
-      graphics.lineStyle(data.width, data.color, 1);
-      graphics.moveTo(data.x, data.y);
+    graphics.lineStyle(data.width, data.color, 1);
+    graphics.moveTo(data.x, data.y);
+  });
+
+  socket.on("draw", (data) => {
+    if (!graphics) return;
+
+    graphics.lineStyle(data.width, data.color, 1);
+
+    if (lastReceivedPos) {
+      graphics.moveTo(lastReceivedPos.x, lastReceivedPos.y);
+      graphics.lineTo(data.x, data.y);
     }
-  );
 
-  socket.on(
-    "draw",
-    (data: { x: number; y: number; color: number; width: number }) => {
-      if (!graphics) return;
-
-      graphics.lineStyle(data.width, data.color, 1);
-
-      if (lastReceivedPos) {
-        graphics.moveTo(lastReceivedPos.x, lastReceivedPos.y);
-        graphics.lineTo(data.x, data.y);
-      }
-
-      lastReceivedPos = data;
-
-      app?.renderer.render(app.stage);
-    }
-  );
+    lastReceivedPos = data;
+    app?.renderer.render(app.stage);
+  });
 
   socket.on("clear_canvas", () => {
-    app?.stage.removeChildren(); // **Completely wipe the canvas**
+    app?.stage.removeChildren();
     lastReceivedPos = null;
+  });
+
+  // 👇 Засичане на рисувача при старт на рунда
+  socket.on("round_started", ({ drawerId }) => {
+    isDrawer.value = socket.id === drawerId;
+    console.log("🎨 You are drawer:", isDrawer.value);
   });
 };
 
-// Attach event listeners to canvas element
+// Attach event listeners to canvas
 const attachEventListeners = () => {
   canvas = document.getElementById("pixi-canvas") as HTMLCanvasElement;
   if (!canvas) return;
@@ -142,10 +148,8 @@ const attachEventListeners = () => {
   canvas.addEventListener("mouseleave", stopDraw);
 };
 
-// Remove event listeners
 const detachEventListeners = () => {
   if (!canvas) return;
-
   canvas.removeEventListener("mousedown", startDraw);
   canvas.removeEventListener("mousemove", draw);
   canvas.removeEventListener("mouseup", stopDraw);
@@ -154,13 +158,12 @@ const detachEventListeners = () => {
 
 // Initialize PIXI Canvas
 const initCanvas = async () => {
-  await nextTick(); // Ensures the DOM is ready
-
+  await nextTick();
   if (!canvasContainer.value) return;
 
   app = new PIXI.Application({
     view: document.getElementById("pixi-canvas") as HTMLCanvasElement,
-    width: 600,
+    width: 832,
     height: 400,
     backgroundColor: 0xffffff,
     antialias: true,
@@ -181,6 +184,7 @@ onMounted(() => {
 onUnmounted(() => {
   socket.off("draw");
   socket.off("clear_canvas");
+  socket.off("round_started");
 
   detachEventListeners();
 

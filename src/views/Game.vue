@@ -21,6 +21,9 @@
           @keyup.enter="sendMessage"
         ></v-text-field>
       </v-card>
+
+      <!-- ✨ Word Choice Overlay (only visible for drawer) -->
+      <WordChoice />
     </div>
   </v-card>
 </template>
@@ -29,22 +32,19 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 import PixiCanvas from "@/components/canvas/PixiCanvas.vue";
+import WordChoice from "@/components/canvas/WordChoice.vue"; 
 import socket from "@/plugins/socket";
 import { auth } from "@/plugins/firebase";
 
-// 🎯 Взимаме roomId от URL
 const route = useRoute();
 const roomId = (route.params as { roomId: string }).roomId;
-console.log("ROOM ID:", roomId); // 🔍 провери дали е валиден
 
-// 🧠 Взимаме името от localStorage
 const firebaseUser = auth.currentUser;
 const username = firebaseUser?.displayName || "Guest";
-// 💬 Чат състояние
+
 const messages = ref<{ player: { name: string }; message: string }[]>([]);
 const newMessage = ref("");
 
-// 🚀 Изпращане на съобщение
 const sendMessage = () => {
   if (newMessage.value.trim() === "") return;
 
@@ -54,13 +54,10 @@ const sendMessage = () => {
     message: newMessage.value,
   };
 
-  console.log("Sending message:", msg);
   socket.emit("send_message", msg);
-
   newMessage.value = "";
 };
 
-// 🔌 Свързване към стаята и слушане на съобщения
 onMounted(() => {
   socket.emit("join_lobby", {
     roomId,
@@ -70,26 +67,18 @@ onMounted(() => {
   socket.on("receive_message", (msg) => {
     messages.value.push(msg);
   });
+  socket.on("round_started", ({ wordLength, drawerId }) => {
+  console.log("🟢 Round started! Word length:", wordLength);
+
+  // Пример: скрий избора на дума ако някак го показваш
+  // Покажи в UI: "_ _ _ _" — в зависимост от wordLength
+
+  // Можеш да запазиш drawerId, за да знаеш дали текущият играч е рисувач или не
+});
 });
 
-// 🧹 Изчистване на listener-а
 onUnmounted(() => {
   socket.off("receive_message");
+  socket.off("round_started"); 
 });
 </script>
-
-<style scoped>
-.game-area {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.chat-box {
-  width: 300px;
-  max-height: 500px;
-  overflow-y: auto;
-}
-</style>
