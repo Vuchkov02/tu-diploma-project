@@ -9,7 +9,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     AppFooter: typeof import('./components/AppFooter.vue')['default']
     AuthModal: typeof import('./components/authentication/AuthModal.vue')['default']
-    Chat: typeof import('./components/Chat.vue')['default']
+    Chat: typeof import('./gameComponents/ChatPage.vue')['default']
     CreateLobbyDialog: typeof import('./components/lobbyComponents/CreateLobbyDialog.vue')['default']
     HelloWorld: typeof import('./components/HelloWorld.vue')['default']
     JoinLobbyDialog: typeof import('./components/lobbyComponents/JoinLobbyDialog.vue')['default']

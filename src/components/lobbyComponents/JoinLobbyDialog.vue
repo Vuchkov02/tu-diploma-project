@@ -68,8 +68,10 @@ const joinLobby = () => {
       player: { id: socket.id, name: username },
     });
 
-    socket.once("update_lobby", (players: { id: string; name: string }[]) => {
-      const isInNewLobby = players.some((p) => p.id === socket.id);
+    socket.once("update_lobby", (data: any) => {
+      const actualPlayers = Array.isArray(data) ? data : data.players;
+
+      const isInNewLobby = actualPlayers.some((p: any) => p.id === socket.id);
 
       if (isInNewLobby) {
         dialog.value = false;

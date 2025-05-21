@@ -3,8 +3,10 @@
     <v-card-title
       class="text-h5 text-center"
       style="font-family: 'DynaPuff', cursive"
-      >🎮 LOBBY</v-card-title
     >
+      🎮 LOBBY
+    </v-card-title>
+
     <div class="d-flex justify-center mt-4">
       <CreateLobbyDialog />
       <JoinLobbyDialog />
@@ -12,11 +14,15 @@
 
     <v-card v-if="lobbyId" class="pa-3 mt-5">
       <v-card-title>Lobby ID: {{ lobbyId }}</v-card-title>
+
       <v-list>
         <v-list-item v-for="player in players" :key="player.id">
           🎭 {{ player.name }}
         </v-list-item>
       </v-list>
+
+      <v-card-subtitle> 🎯 Rounds: {{ lobbyInfo.rounds }} </v-card-subtitle>
+
       <v-btn v-if="isHost" color="success" @click="startGame">Start Game</v-btn>
     </v-card>
   </v-card>
@@ -37,14 +43,20 @@ const lobbyId = ref<string | null>((route.query.lobbyId as string) || null);
 const players = ref<{ id: string; name: string }[]>([]);
 const isHost = ref<boolean>(false);
 
-// 🟢 Start game
+const lobbyInfo = ref<{ players: any[]; rounds: number; currentRound: number }>(
+  {
+    players: [],
+    rounds: 0,
+    currentRound: 1,
+  }
+);
+
 const startGame = () => {
   if (!lobbyId.value) return;
   socket.emit("start_game", lobbyId.value);
   router.push(`/game/${lobbyId.value}`);
 };
 
-// 🔁 Join logic
 const joinLobbyById = (id: string) => {
   const username = auth.currentUser?.displayName || "Guest";
   socket.emit("join_lobby", {
@@ -53,15 +65,20 @@ const joinLobbyById = (id: string) => {
   });
 };
 
-// 🚀 Lifecycle
 onMounted(() => {
   if (lobbyId.value) {
     joinLobbyById(lobbyId.value);
   }
 
-  socket.on("update_lobby", (updatedPlayers) => {
-    players.value = updatedPlayers;
-    isHost.value = updatedPlayers[0]?.id === socket.id;
+  socket.on("update_lobby", (data) => {
+    if (Array.isArray(data)) {
+      players.value = data;
+      isHost.value = data[0]?.id === socket.id;
+    } else {
+      players.value = data.players;
+      isHost.value = data.players[0]?.id === socket.id;
+      lobbyInfo.value.rounds = data.rounds;
+    }
   });
 
   socket.on("game_started", () => {
@@ -77,7 +94,6 @@ onMounted(() => {
   });
 });
 
-// 📡 Detect route query change (e.g., after router.push)
 watch(
   () => route.query.lobbyId,
   (newId) => {
@@ -88,7 +104,6 @@ watch(
   }
 );
 
-// 🧹 Cleanup
 onUnmounted(() => {
   socket.emit("leave_lobby", lobbyId.value);
   socket.off("update_lobby");

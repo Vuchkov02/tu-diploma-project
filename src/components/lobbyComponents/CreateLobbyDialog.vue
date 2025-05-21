@@ -3,8 +3,10 @@
     <template #activator="{ props }">
       <v-btn color="primary" v-bind="props">Create Lobby</v-btn>
     </template>
+
     <v-card>
       <v-card-title>Create Lobby</v-card-title>
+
       <v-card-text>
         <v-text-field
           v-model.number="maxPlayers"
@@ -13,12 +15,22 @@
           :min="2"
           :max="10"
         />
+
         <v-select
           v-model="language"
           :items="['English', 'Bulgarian']"
           label="Language"
         />
+
+        <v-select
+          v-model.number="rounds"
+          :items="[1, 2, 3, 5, 7, 10]"
+          label="Rounds"
+          hint="How many rounds will be played?"
+          persistent-hint
+        />
       </v-card-text>
+
       <v-card-actions>
         <v-spacer />
         <v-btn color="success" @click="createLobby">Create</v-btn>
@@ -36,6 +48,7 @@ import { auth } from "@/plugins/firebase";
 const dialog = ref(false);
 const maxPlayers = ref(4);
 const language = ref("English");
+const rounds = ref(3); // default number of rounds
 const router = useRouter();
 
 const createLobby = () => {
@@ -48,6 +61,7 @@ const createLobby = () => {
     {
       maxPlayers: maxPlayers.value,
       language: language.value,
+      rounds: rounds.value, // 👈 pass to server
       player: { id: socket.id, name: username },
     },
     (res: { roomId: string }) => {
@@ -59,7 +73,6 @@ const createLobby = () => {
       console.log("Lobby created with ID:", res.roomId);
 
       dialog.value = false;
-      // ⚠️ Важно: изрично форсирай `router.push` с query
       router.push({
         path: "/lobby",
         query: { lobbyId: res.roomId },

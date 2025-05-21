@@ -57,6 +57,8 @@ io.on("connection", (socket) => {
       language: (data.language || "english").toLowerCase(),
       drawerIndex: 0,
       currentWord: null,
+      rounds: data.rounds || 3,
+      currentRound: 1,
     };
 
     socket.join(roomId);
@@ -85,7 +87,11 @@ io.on("connection", (socket) => {
     socket.data.lobbyId = roomId;
 
     console.log(`✅ ${player.name} joined room ${roomId}`);
-    io.to(roomId).emit("update_lobby", lobby.players);
+    io.to(roomId).emit("update_lobby", {
+      players: lobby.players,
+      rounds: lobby.rounds,
+      currentRound: lobby.currentRound,
+    });
   });
 
   // 📌 START GAME
@@ -93,7 +99,10 @@ io.on("connection", (socket) => {
     const lobby = lobbies[roomId];
     if (!lobby) return;
 
-    console.log("👥 Players in lobby:", lobby.players.map(p => p.name));
+    console.log(
+      "👥 Players in lobby:",
+      lobby.players.map((p) => p.name)
+    );
 
     const socketsInRoom = await io.in(roomId).allSockets();
     console.log("📡 Actual sockets in room:", Array.from(socketsInRoom));
@@ -113,6 +122,12 @@ io.on("connection", (socket) => {
       console.error("🔥 Error loading words:", error);
     }
   });
+  socket.on("set_word", ({ roomId, word, drawerId }) => {
+    io.to(drawerId).emit("set_word", word);
+  });
+  socket.on("reveal_letter", ({ roomId, index, letter }) => {
+    socket.to(roomId).emit("reveal_letter", { index, letter });
+  });
 
   // 📌 WORD CHOSEN
   socket.on("word_chosen", ({ roomId, word }) => {
@@ -126,14 +141,39 @@ io.on("connection", (socket) => {
       roomId,
       wordLength: word.length,
       drawerId: socket.id,
+      currentRound: lobby.currentRound,
+      totalRounds: lobby.rounds,
     });
 
     // 🔜 Тук ще добавим reveal + таймер
   });
-
+  socket.on("end_round", async (roomId) => {
+    await handleEndRound(roomId);
+  });
   // 📌 CHAT
   socket.on("send_message", ({ roomId, message, player }) => {
-    io.to(roomId).emit("receive_message", { player, message });
+    const lobby = lobbies[roomId];
+    if (!lobby) return;
+
+    const normalizedGuess = message.trim().toLowerCase();
+    const actualWord = lobby.currentWord?.trim().toLowerCase();
+
+    // 🎯 Check if guess is correct
+    if (normalizedGuess === actualWord) {
+      io.to(roomId).emit("receive_message", {
+        player,
+        message: `🎉 ${player.name} guessed the word!`,
+      });
+
+      io.to(roomId).emit("correct_guess", { player, word: lobby.currentWord });
+
+      setTimeout(() => {
+        io.to(roomId).emit("clear_canvas");
+        handleEndRound(roomId); // ✅ правилен начин
+      }, 1000);
+    } else {
+      io.to(roomId).emit("receive_message", { player, message });
+    }
   });
 
   // 📌 DRAWING EVENTS
@@ -185,7 +225,33 @@ async function loadWordsForLanguage(lang) {
   wordPools[lang] = words;
   return words;
 }
+async function handleEndRound(roomId) {
+  const lobby = lobbies[roomId];
+  if (!lobby) return;
 
+  lobby.drawerIndex++;
+  const isNewRound = lobby.drawerIndex % lobby.players.length === 0;
+
+  if (isNewRound) {
+    lobby.currentRound++;
+  }
+
+  if (lobby.currentRound > lobby.rounds) {
+    io.to(roomId).emit("game_over");
+    return;
+  }
+
+  const drawer = lobby.players[lobby.drawerIndex % lobby.players.length];
+  const lang = lobby.language;
+
+  try {
+    const wordPool = await loadWordsForLanguage(lang);
+    const options = wordPool.sort(() => 0.5 - Math.random()).slice(0, 3);
+    io.to(drawer.id).emit("choose_word", options);
+  } catch (err) {
+    console.error("🔥 Error loading words:", err);
+  }
+}
 // 🟢 Start Server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

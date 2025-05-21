@@ -1,5 +1,5 @@
 <template>
-  <div v-if="visible" class="word-choice-overlay">
+  <div v-if="visible && !gameEnded" class="word-choice-overlay">
     <div
       class="word-box"
       v-for="word in words"
@@ -12,15 +12,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, inject, onMounted } from "vue";
 import socket from "@/plugins/socket";
 import { useRoute } from "vue-router";
+
+// 🧠 Inject флаг от Game.vue
+const gameEnded = inject("gameEnded", ref(false));
+
 const words = ref<string[]>([]);
 const visible = ref(false);
 const route = useRoute();
 
 onMounted(() => {
   socket.on("choose_word", (wordOptions: string[]) => {
+    if (gameEnded.value) return;
     words.value = wordOptions;
     visible.value = true;
   });
@@ -29,6 +34,7 @@ onMounted(() => {
 const choose = (word: string) => {
   const roomId = (route.query.lobbyId ||
     (route.params as any).roomId) as string;
+
   if (!roomId) {
     console.warn("❌ Room ID not found!");
     return;
@@ -36,6 +42,19 @@ const choose = (word: string) => {
 
   console.log("🎯 Chosen word:", word);
   socket.emit("word_chosen", { roomId, word });
+
+  socket.emit("round_started", {
+    roomId,
+    wordLength: word.length,
+    drawerId: socket.id,
+  });
+
+  socket.emit("set_word", {
+    roomId,
+    word,
+    drawerId: socket.id,
+  });
+
   visible.value = false;
 };
 </script>
