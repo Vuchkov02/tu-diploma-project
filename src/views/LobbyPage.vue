@@ -1,8 +1,5 @@
 <template>
-  <v-container
-    fluid
-    class="d-flex justify-center align-center fill-height"
-  >
+  <v-container fluid class="d-flex justify-center align-center fill-height">
     <v-card
       class="pa-6"
       max-width="600"
@@ -62,13 +59,14 @@
             :key="player.id"
             :style="{ color: '#ffffff' }"
           >
-             {{ player.name }}
+            {{ player.name }}
           </v-list-item>
         </v-list>
 
         <div class="text-center mt-4">
           <v-btn
             v-if="isHost"
+            :disabled="players.length < 2"
             color="primary"
             @click="startGame"
             style="background-color: #94f8d0; color: #1e1d26; font-weight: bold"
@@ -122,7 +120,13 @@ onMounted(() => {
   if (lobbyId.value) {
     joinLobbyById(lobbyId.value);
   }
-
+  socket.on("lobby_closed", () => {
+    alert("🚪 The host has closed the lobby.");
+    router.replace("/lobby");
+    lobbyId.value = null;
+    players.value = [];
+    isHost.value = false;
+  });
   socket.on("update_lobby", (data) => {
     if (Array.isArray(data)) {
       players.value = data;
@@ -162,5 +166,6 @@ onUnmounted(() => {
   socket.off("update_lobby");
   socket.off("game_started");
   socket.off("lobby_not_found");
+  socket.off("lobby_closed");
 });
 </script>

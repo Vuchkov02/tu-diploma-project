@@ -343,11 +343,11 @@ body,
   margin-right: 0.5em;
 }
 @media (min-width: 1280px) {
-  .scale-container {
+  /* .scale-container {
     margin-top: -80px;
-  }
-  .scale-wrapper {
+  } */
+  /* .scale-wrapper {
     transform: scale(0.8);
-  }
+  } */
 }
 </style>

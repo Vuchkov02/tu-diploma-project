@@ -55,6 +55,7 @@ io.on("connection", (socket) => {
 
     lobbies[roomId] = {
       players: [player],
+      hostId: socket.id,
       language: (data.language || "english").toLowerCase(),
       drawerIndex: 0,
       currentWord: null,
@@ -106,6 +107,11 @@ io.on("connection", (socket) => {
     const drawer = lobby.players[lobby.drawerIndex % lobby.players.length];
     const lang = lobby.language;
 
+    // ✅ Изпрати на всички, че drawer избира дума
+    socket.to(roomId).emit("choose_word_status", {
+      drawerId: drawer.id,
+    });
+
     try {
       const wordPool = await loadWordsForLanguage(lang);
       const options = wordPool.sort(() => 0.5 - Math.random()).slice(0, 3);
@@ -122,6 +128,9 @@ io.on("connection", (socket) => {
   socket.on("word_chosen", ({ roomId, word }) => {
     const lobby = lobbies[roomId];
     if (!lobby) return;
+
+    // ✅ Кажи на всички останали, че думата е избрана
+    socket.to(roomId).emit("word_chosen_status");
 
     lobby.currentWord = word;
     lobby.revealedLetters = [];
@@ -165,9 +174,10 @@ io.on("connection", (socket) => {
         if (drawer) drawer.score += drawerBonus;
 
         io.to(roomId).emit("receive_message", {
-          player: { name: player.name, system: true }, // флагче за стил
+          player: { name: player.name, system: true },
           message: `🎉 guessed the word! (+${guesserPoints} pts)`,
         });
+
         io.to(roomId).emit("update_scores", {
           players: lobby.players.map((p) => ({
             name: p.name,
@@ -209,15 +219,24 @@ io.on("connection", (socket) => {
     const lobbyId = socket.data.lobbyId;
     if (!lobbyId || !lobbies[lobbyId]) return;
 
-    lobbies[lobbyId].players = lobbies[lobbyId].players.filter(
-      (p) => p.id !== socket.id
-    );
+    const lobby = lobbies[lobbyId];
 
-    if (lobbies[lobbyId].players.length === 0) {
+    // 🔥 ако хостът напусне – изтриваме лобито и изгонваме всички
+    if (lobby.hostId === socket.id) {
+      io.to(lobbyId).emit("lobby_closed");
+      delete lobbies[lobbyId];
+      console.log(`🧹 Host left → lobby ${lobbyId} destroyed`);
+      return;
+    }
+
+    // обикновен играч си тръгва
+    lobby.players = lobby.players.filter((p) => p.id !== socket.id);
+
+    if (lobby.players.length === 0) {
       delete lobbies[lobbyId];
       console.log(`🧹 Lobby ${lobbyId} deleted`);
     } else {
-      io.to(lobbyId).emit("update_lobby", lobbies[lobbyId].players);
+      io.to(lobbyId).emit("update_lobby", lobby.players);
     }
 
     console.log(`❌ User disconnected: ${socket.id}`);
@@ -253,6 +272,15 @@ async function handleEndRound(roomId) {
 
   const drawer = lobby.players[lobby.drawerIndex % lobby.players.length];
   const lang = lobby.language;
+
+  // ✅ кажи на всички, че drawer избира дума
+  lobby.players.forEach((p) => {
+    if (p.id !== drawer.id) {
+      io.to(p.id).emit("choose_word_status", {
+        drawerId: drawer.id,
+      });
+    }
+  });
 
   try {
     const wordPool = await loadWordsForLanguage(lang);

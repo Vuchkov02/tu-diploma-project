@@ -1,28 +1,88 @@
 <template>
   <div ref="canvasContainer" class="canvas-container">
     <canvas id="pixi-canvas"></canvas>
+
+    <!-- 🎨 Brush controls (visible only for the current drawer) -->
+    <div class="controls" v-if="isDrawer">
+      <!-- Color picker -->
+      <input type="color" v-model="strokeColorHex" aria-label="Brush color" />
+
+      <!-- Width slider -->
+      <input
+        type="range"
+        min="1"
+        max="30"
+        step="1"
+        v-model.number="strokeWidth"
+        aria-label="Brush width"
+      />
+      <button
+        style="
+          padding: 8px 16px;
+          font-weight: bold;
+          font-size: 14px;
+          color: #fff;
+          background: linear-gradient(145deg, #ff4c4c, #c03030);
+          border: none;
+          border-radius: 12px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+          transition: transform 0.1s ease, box-shadow 0.1s ease;
+          cursor: pointer;
+        "
+        @click="clearCanvas"
+      >
+        CLEAR
+      </button>
+    </div>
   </div>
-  <!-- <v-btn color="error" class="mt-2" @click="clearCanvas" :disabled="!isDrawer">
-    Clear
-  </v-btn> -->
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from "vue";
+import { ref, watch, onMounted, onUnmounted, nextTick } from "vue";
 import * as PIXI from "pixi.js";
 import socket from "@/plugins/socket";
 
+/** ----------------------------------
+ * Refs & reactive state
+ * ---------------------------------*/
 const canvasContainer = ref<HTMLElement | null>(null);
 let app: PIXI.Application | null = null;
 let graphics: PIXI.Graphics | null = null;
 let drawing = false;
 let canvas: HTMLCanvasElement | null = null;
 
-const strokeColor = ref(0x000000); // Default black
-const strokeWidth = ref(2); // Default width
-const isDrawer = ref(false); // ⬅️ само рисувачът може да рисува
+/* 🖌 Current brush settings */
+const strokeColor = ref<number>(0x000000); // stored as number for Pixi
+const strokeWidth = ref<number>(2);
+const strokeColorHex = ref<string>("#000000"); // bound to <input type="color">
+const isDrawer = ref<boolean>(false); // only drawer can draw / see controls
 
-// Start drawing
+/* Sync hex <-> numeric color */
+watch(strokeColorHex, (val) => {
+  strokeColor.value = parseInt(val.replace("#", ""), 16);
+});
+watch(strokeColor, (val) => {
+  // keep the hex picker in sync if color changed programmatically
+  const hex = "#" + val.toString(16).padStart(6, "0");
+  if (hex.toLowerCase() !== strokeColorHex.value.toLowerCase()) {
+    strokeColorHex.value = hex;
+  }
+});
+
+/** ----------------------------------
+ * Drawing helpers
+ * ---------------------------------*/
+// Get mouse position relative to canvas
+const getMousePosition = (event: MouseEvent) => {
+  if (!canvas) return { x: 0, y: 0 };
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top,
+  };
+};
+
+/* === Start drawing === */
 const startDraw = (event: MouseEvent) => {
   if (!app || !isDrawer.value) return;
   drawing = true;
@@ -43,14 +103,12 @@ const startDraw = (event: MouseEvent) => {
   });
 };
 
-// Draw on the canvas
+/* === Draw while moving === */
 let lastPos: { x: number; y: number } | null = null;
-
 const draw = (event: MouseEvent) => {
   if (!drawing || !graphics || !isDrawer.value) return;
 
   const pos = getMousePosition(event);
-
   graphics.lineStyle(strokeWidth.value, strokeColor.value, 1);
 
   if (lastPos) {
@@ -59,7 +117,6 @@ const draw = (event: MouseEvent) => {
   }
 
   lastPos = pos;
-
   app?.renderer.render(app.stage);
 
   socket.emit("draw", {
@@ -69,34 +126,27 @@ const draw = (event: MouseEvent) => {
   });
 };
 
+/* === Stop drawing === */
 const stopDraw = () => {
   drawing = false;
   lastPos = null;
   graphics = null;
 };
 
-// Get mouse position relative to canvas
-const getMousePosition = (event: MouseEvent) => {
-  if (!canvas) return { x: 0, y: 0 };
-  const rect = canvas.getBoundingClientRect();
-  return {
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top,
-  };
-};
-
-// Clear the canvas
+/* === Clear canvas (drawer only) === */
 const clearCanvas = () => {
   if (!isDrawer.value) return;
 
-  app?.stage.removeChildren(); // маха всичко от сцената
+  app?.stage.removeChildren();
   graphics = new PIXI.Graphics();
   app?.stage.addChild(graphics);
 
   socket.emit("clear_canvas");
 };
 
-// Receive drawing events from others
+/** ----------------------------------
+ * Socket listeners
+ * ---------------------------------*/
 let lastReceivedPos: { x: number; y: number } | null = null;
 
 const setupSocketListeners = () => {
@@ -130,14 +180,16 @@ const setupSocketListeners = () => {
     lastReceivedPos = null;
   });
 
-  // 👇 Засичане на рисувача при старт на рунда
+  /* 🔔 Detect current drawer at round start */
   socket.on("round_started", ({ drawerId }) => {
     isDrawer.value = socket.id === drawerId;
     console.log("🎨 You are drawer:", isDrawer.value);
   });
 };
 
-// Attach event listeners to canvas
+/** ----------------------------------
+ * Event listeners for DOM canvas
+ * ---------------------------------*/
 const attachEventListeners = () => {
   canvas = document.getElementById("pixi-canvas") as HTMLCanvasElement;
   if (!canvas) return;
@@ -156,14 +208,16 @@ const detachEventListeners = () => {
   canvas.removeEventListener("mouseleave", stopDraw);
 };
 
-// Initialize PIXI Canvas
+/** ----------------------------------
+ * PIXI initialisation
+ * ---------------------------------*/
 const initCanvas = async () => {
   await nextTick();
   if (!canvasContainer.value) return;
 
   app = new PIXI.Application({
     view: document.getElementById("pixi-canvas") as HTMLCanvasElement,
-    resizeTo: canvasContainer.value!, // 🧠 динамично спрямо контейнера!
+    resizeTo: canvasContainer.value!, // dynamic sizing
     backgroundColor: 0xffffff,
     antialias: true,
   });
@@ -174,7 +228,9 @@ const initCanvas = async () => {
   attachEventListeners();
 };
 
-// Lifecycle Hooks
+/** ----------------------------------
+ * Lifecycle hooks
+ * ---------------------------------*/
 onMounted(() => {
   initCanvas();
   setupSocketListeners();
@@ -195,17 +251,33 @@ onUnmounted(() => {
 
 <style scoped>
 .canvas-container {
-  border: 2px solid #000;
-}
-.canvas-container {
+  position: relative; /* ensures controls stay inside */
   width: 100%;
   height: 100%;
   display: flex;
+  border: 2px solid #000;
 }
 
 canvas {
   width: 100% !important;
   height: 100% !important;
   display: block;
+}
+
+/* 🎛 Brush controls */
+.controls {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  display: flex;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+}
+.controls input[type="range"] {
+  width: 120px;
 }
 </style>

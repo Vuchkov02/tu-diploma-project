@@ -1,4 +1,15 @@
 <template>
+  <!-- 👀 Познавачите виждат това съобщение -->
+  <transition name="fade">
+    <div
+      v-show="!visible && !gameEnded && showWaitingMessage"
+      class="waiting-overlay"
+    >
+      <div class="waiting-text">🕒 The drawer is choosing a word...</div>
+    </div>
+  </transition>
+
+  <!-- ✍️ Само рисувачът вижда избор на дума -->
   <div v-if="visible && !gameEnded" class="word-choice-overlay">
     <div
       class="word-box"
@@ -18,49 +29,59 @@ import gsap from "gsap";
 import socket from "@/plugins/socket";
 import { useRoute } from "vue-router";
 
-// 🧠 Инжектиране от Game.vue
+// 🧠 Състояние на играта
 const gameEnded = inject("gameEnded", shallowRef(false));
 const words = ref<string[]>([]);
-const visible = ref(false);
+const visible = ref(false); // Ако е true – този потребител е рисувач
+const showWaitingMessage = ref(false);
 const wordRefs = ref<Array<HTMLElement | null>>([]);
 const route = useRoute();
 
-// ✅ Задаване на DOM референции безопасно
+// 📌 DOM референции за анимация
 const setWordRef = (el: unknown, index: number) => {
-  if (el instanceof HTMLElement) {
-    wordRefs.value[index] = el;
-  } else {
-    wordRefs.value[index] = null;
-  }
+  wordRefs.value[index] = el instanceof HTMLElement ? el : null;
 };
-onMounted(() => {
-  socket.on("choose_word", async (wordOptions: string[]) => {
-    if (gameEnded.value) return;
 
-    words.value = wordOptions;
-    visible.value = true;
+// 👂 Покажи думите на рисувача
+socket.on("choose_word", async (options: string[]) => {
+  if (gameEnded.value) return;
 
-    await nextTick();
+  words.value = options;
+  visible.value = true;
+  showWaitingMessage.value = false;
 
-    wordRefs.value.forEach((el, i) => {
-      if (el instanceof HTMLElement) {
-        gsap.fromTo(
-          el,
-          { opacity: 0, y: 20, scale: 0.95 },
-          {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            delay: i * 0.1,
-            duration: 0.6,
-            ease: "power3.out", // 💨 smooth & cool
-          }
-        );
-      }
-    });
+  await nextTick();
+
+  wordRefs.value.forEach((el, i) => {
+    if (el) {
+      gsap.fromTo(
+        el,
+        { opacity: 0, y: 20, scale: 0.95 },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          delay: i * 0.1,
+          duration: 0.6,
+          ease: "power3.out",
+        }
+      );
+    }
   });
 });
 
+// 👂 Познавачите разбират, че някой избира дума
+socket.on("choose_word_status", () => {
+  visible.value = false;
+  showWaitingMessage.value = true;
+});
+
+// 👂 След като думата е избрана — скрий overlay-а
+socket.on("word_chosen_status", () => {
+  showWaitingMessage.value = false;
+});
+
+// 📤 Рисувачът избира дума
 const choose = (word: string) => {
   const roomId = (route.query.lobbyId ||
     (route.params as any).roomId) as string;
@@ -88,7 +109,7 @@ const choose = (word: string) => {
   top: 20%;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(30, 29, 38, 0.95); /* тъмно сиво */
+  background: rgba(30, 29, 38, 0.95);
   padding: 24px;
   border-radius: 16px;
   z-index: 2000;
@@ -115,5 +136,54 @@ const choose = (word: string) => {
   color: #1e1d26;
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(201, 156, 255, 0.3);
+}
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+.fade-enter-to,
+.fade-leave-from {
+  opacity: 1;
+}
+
+.waiting-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(20, 20, 20, 0.8);
+  z-index: 1999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+}
+
+.waiting-text {
+  color: #94f8d0;
+  font-size: 2rem;
+  font-weight: bold;
+  text-shadow: 0 0 10px #94f8d099;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>
