@@ -1,29 +1,36 @@
 <template>
-  <v-app-bar app color="primary" dark>
+  <v-app-bar
+    app
+    :style="{ backgroundColor: '#1E1D26', color: '#94F8D0' }"
+    flat
+    height="64"
+  >
     <v-container class="d-flex align-center px-0" fluid>
       <!-- Profile Info on the Left -->
       <div class="d-flex align-center">
-        <v-btn icon class="ml-2">
+        <v-btn icon class="ml-2" :style="{ color: '#94F8D0' }">
           <v-icon>mdi-account</v-icon>
         </v-btn>
-        <span class="ml-2">Hello, {{ user?.displayName || "User" }}</span>
+        <span class="ml-2" style="color: #94f8d0">
+          Hello, {{ user?.displayName || "User" }}
+        </span>
       </div>
 
-      <!-- Profile Section: Centered Username Placeholder -->
+      <!-- Centered Title -->
       <div
         class="flex-grow-1 d-flex justify-center"
         style="margin-right: 180px"
       >
         <span
           class="text-h6 font-weight-bold"
-          style="font-family: 'DynaPuff', cursive"
+          style="font-family: 'DynaPuff', cursive; color: #c99cff"
         >
           DRAW & GUESS
         </span>
       </div>
 
-      <!-- 🚪 Logout Button on the Far Right -->
-      <v-btn icon color="error" @click="logout" class="mr-2">
+      <!-- Logout Button -->
+      <v-btn icon @click="logout" class="mr-2" color="error">
         <v-icon>mdi-logout</v-icon>
       </v-btn>
     </v-container>

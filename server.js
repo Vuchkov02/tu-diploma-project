@@ -33,10 +33,11 @@ const io = new Server(server, {
   },
 });
 
-const lobbies = {}; // { [roomId]: { players, language, drawerIndex, currentWord } }
-const wordPools = {}; // кеш на думи по език
+const lobbies = {};
+const wordPools = {};
 
 app.use(cors());
+
 app.get("/", (req, res) => {
   res.send("🎨 Skribbl.io Clone Server Running...");
 });
@@ -44,12 +45,12 @@ app.get("/", (req, res) => {
 io.on("connection", (socket) => {
   console.log(`✅ User connected: ${socket.id}`);
 
-  // 📌 CREATE LOBBY
   socket.on("create_lobby", (data, callback) => {
     const roomId = Math.random().toString(36).substring(7);
     const player = {
       id: socket.id,
       name: data.player?.name || "Guest",
+      score: 0,
     };
 
     lobbies[roomId] = {
@@ -59,6 +60,8 @@ io.on("connection", (socket) => {
       currentWord: null,
       rounds: data.rounds || 3,
       currentRound: 1,
+      guessedPlayers: [],
+      roundStartedAt: null,
     };
 
     socket.join(roomId);
@@ -68,10 +71,7 @@ io.on("connection", (socket) => {
     callback({ roomId });
   });
 
-  // 📌 JOIN LOBBY
   socket.on("join_lobby", ({ roomId, player }) => {
-    console.log(`📥 ${player.name} is joining lobby ${roomId}`);
-
     const lobby = lobbies[roomId];
     if (!lobby) {
       socket.emit("lobby_not_found");
@@ -80,13 +80,16 @@ io.on("connection", (socket) => {
 
     const alreadyIn = lobby.players.find((p) => p.id === socket.id);
     if (!alreadyIn) {
-      lobby.players.push(player);
+      lobby.players.push({
+        id: socket.id,
+        name: player.name,
+        score: 0,
+      });
     }
 
     socket.join(roomId);
     socket.data.lobbyId = roomId;
 
-    console.log(`✅ ${player.name} joined room ${roomId}`);
     io.to(roomId).emit("update_lobby", {
       players: lobby.players,
       rounds: lobby.rounds,
@@ -94,20 +97,10 @@ io.on("connection", (socket) => {
     });
   });
 
-  // 📌 START GAME
   socket.on("start_game", async (roomId) => {
     const lobby = lobbies[roomId];
     if (!lobby) return;
 
-    console.log(
-      "👥 Players in lobby:",
-      lobby.players.map((p) => p.name)
-    );
-
-    const socketsInRoom = await io.in(roomId).allSockets();
-    console.log("📡 Actual sockets in room:", Array.from(socketsInRoom));
-
-    // 🟢 Уведоми всички клиенти да се преместят към /game
     io.to(roomId).emit("game_started", { roomId });
 
     const drawer = lobby.players[lobby.drawerIndex % lobby.players.length];
@@ -116,26 +109,24 @@ io.on("connection", (socket) => {
     try {
       const wordPool = await loadWordsForLanguage(lang);
       const options = wordPool.sort(() => 0.5 - Math.random()).slice(0, 3);
-
       io.to(drawer.id).emit("choose_word", options);
     } catch (error) {
       console.error("🔥 Error loading words:", error);
     }
   });
+
   socket.on("set_word", ({ roomId, word, drawerId }) => {
     io.to(drawerId).emit("set_word", word);
   });
-  socket.on("reveal_letter", ({ roomId, index, letter }) => {
-    socket.to(roomId).emit("reveal_letter", { index, letter });
-  });
 
-  // 📌 WORD CHOSEN
   socket.on("word_chosen", ({ roomId, word }) => {
     const lobby = lobbies[roomId];
     if (!lobby) return;
 
     lobby.currentWord = word;
     lobby.revealedLetters = [];
+    lobby.guessedPlayers = [];
+    lobby.roundStartedAt = Date.now();
 
     io.to(roomId).emit("round_started", {
       roomId,
@@ -144,13 +135,12 @@ io.on("connection", (socket) => {
       currentRound: lobby.currentRound,
       totalRounds: lobby.rounds,
     });
+  });
 
-    // 🔜 Тук ще добавим reveal + таймер
+  socket.on("reveal_letter", ({ roomId, index, letter }) => {
+    socket.to(roomId).emit("reveal_letter", { index, letter });
   });
-  socket.on("end_round", async (roomId) => {
-    await handleEndRound(roomId);
-  });
-  // 📌 CHAT
+
   socket.on("send_message", ({ roomId, message, player }) => {
     const lobby = lobbies[roomId];
     if (!lobby) return;
@@ -158,25 +148,47 @@ io.on("connection", (socket) => {
     const normalizedGuess = message.trim().toLowerCase();
     const actualWord = lobby.currentWord?.trim().toLowerCase();
 
-    // 🎯 Check if guess is correct
     if (normalizedGuess === actualWord) {
-      io.to(roomId).emit("receive_message", {
-        player,
-        message: `🎉 ${player.name} guessed the word!`,
-      });
+      if (!lobby.guessedPlayers.includes(player.name)) {
+        lobby.guessedPlayers.push(player.name);
 
-      io.to(roomId).emit("correct_guess", { player, word: lobby.currentWord });
+        const elapsed = lobby.roundStartedAt
+          ? Math.floor((Date.now() - lobby.roundStartedAt) / 1000)
+          : 0;
 
-      setTimeout(() => {
-        io.to(roomId).emit("clear_canvas");
-        handleEndRound(roomId); // ✅ правилен начин
-      }, 1000);
+        const guesserPoints = Math.max(20, 100 - elapsed * 2);
+        const drawer = lobby.players[lobby.drawerIndex % lobby.players.length];
+        const drawerBonus = 50;
+
+        const guesser = lobby.players.find((p) => p.name === player.name);
+        if (guesser) guesser.score += guesserPoints;
+        if (drawer) drawer.score += drawerBonus;
+
+        io.to(roomId).emit("receive_message", {
+          player: { name: player.name, system: true }, // флагче за стил
+          message: `🎉 guessed the word! (+${guesserPoints} pts)`,
+        });
+        io.to(roomId).emit("update_scores", {
+          players: lobby.players.map((p) => ({
+            name: p.name,
+            score: p.score,
+          })),
+        });
+
+        setTimeout(() => {
+          io.to(roomId).emit("clear_canvas");
+          handleEndRound(roomId);
+        }, 1000);
+      }
     } else {
       io.to(roomId).emit("receive_message", { player, message });
     }
   });
 
-  // 📌 DRAWING EVENTS
+  socket.on("end_round", async (roomId) => {
+    await handleEndRound(roomId);
+  });
+
   socket.on("start_draw", (data) => {
     socket.broadcast.emit("start_draw", data);
   });
@@ -189,12 +201,10 @@ io.on("connection", (socket) => {
     io.emit("clear_canvas");
   });
 
-  // 📌 LOBBY CHECK
   socket.on("check_lobby_exists", (roomId, callback) => {
     callback(!!lobbies[roomId]);
   });
 
-  // 📌 DISCONNECT
   socket.on("disconnect", () => {
     const lobbyId = socket.data.lobbyId;
     if (!lobbyId || !lobbies[lobbyId]) return;
@@ -214,7 +224,6 @@ io.on("connection", (socket) => {
   });
 });
 
-// 🔁 Зареждане на думи от Firestore по език
 async function loadWordsForLanguage(lang) {
   if (wordPools[lang]) return wordPools[lang];
 
@@ -225,6 +234,7 @@ async function loadWordsForLanguage(lang) {
   wordPools[lang] = words;
   return words;
 }
+
 async function handleEndRound(roomId) {
   const lobby = lobbies[roomId];
   if (!lobby) return;
@@ -252,6 +262,6 @@ async function handleEndRound(roomId) {
     console.error("🔥 Error loading words:", err);
   }
 }
-// 🟢 Start Server
+
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

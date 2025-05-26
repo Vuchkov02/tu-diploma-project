@@ -12,8 +12,17 @@ const vuetify = createVuetify({
     defaultTheme: "myCustomTheme",
     themes: {
       myCustomTheme: {
-        dark: false, // Set to true if using dark mode
-        colors: {}, // Define theme colors if needed
+        dark: true, // ✅ Включваме тъмния режим
+        colors: {
+          background: "#1E1D26", // 🖤 Тъмно сиво
+          surface: "#1E1D26", // 🖤 Също за компоненти като карти
+          primary: "#94F8D0", // 💚 Ментово зелено
+          secondary: "#C99CFF", // 💜 Светло лилаво
+          onPrimary: "#000000", // Черен текст върху ментово
+          onSecondary: "#1E1D26", // Тъмен текст върху лилаво
+          onBackground: "#FFFFFF", // Бял текст на тъмен фон
+          onSurface: "#FFFFFF",
+        },
         variables: {
           "font-family-base": "DynaPuff",
         },

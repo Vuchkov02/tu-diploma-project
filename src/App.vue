@@ -111,7 +111,7 @@ onUnmounted(() => {
   overflow-y: auto;
 }
 .background {
-  background: url("@/assets/background-main.webp") no-repeat center center fixed;
+  background: url("@/assets/background-main.png") no-repeat center center fixed;
   background-size: cover;
   min-height: 100vh;
 }
@@ -124,7 +124,7 @@ onUnmounted(() => {
   flex-grow: 1; /* Makes the main content take up the remaining space */
   display: flex;
   flex-direction: column;
-  margin-top: 64px; /* Adjust this based on your NavBar height */
+  margin-top: 12px; /* Adjust this based on your NavBar height */
 }
 
 .v-container {

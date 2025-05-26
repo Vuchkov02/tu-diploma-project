@@ -1,36 +1,54 @@
-<!-- ✅ Game.vue -->
 <template>
-  <v-card class="pa-4">
-    <div class="game-area">
-      <div class="timer-display">⏱️ {{ timeLeft }}</div>
+  <div class="scale-container">
+    <div class="scale-wrapper" ref="scaleWrapper">
+      <div class="game-grid">
+        <div class="header">
+          <div class="timer-display" style="color: #b7b3b3">
+            ⏱️ {{ timeLeft }}
+          </div>
+          <div class="word-display" style="color: #b7b3b3">
+            📝 {{ displayedWord }}
+          </div>
+          <div class="round-counter" style="color: #b7b3b3">
+            🔁 Round {{ currentRound }} / {{ totalRounds }}
+          </div>
+        </div>
 
-      <div class="round-counter text-center mt-1">
-        🔁 Round {{ currentRound }} / {{ totalRounds }}
+        <div class="main">
+          <div class="canvas">
+            <PixiCanvas />
+          </div>
+          <div class="score">
+            <h3>🏆 Leaderboard</h3>
+            <ul class="score-list">
+              <li v-for="(player, index) in sortedScores" :key="player.name">
+                <span class="player-rank">{{ index + 1 }}.</span>
+                <span class="player-name">{{ player.name + ": " }}</span>
+                <span class="player-score">{{ player.score + " pts." }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="chat">
+          <ChatBox
+            :messages="messages"
+            v-model:newMessage="newMessage"
+            :send-message="sendMessage"
+            :is-drawer="socket.id === drawerId"
+            :game-ended="gameEnded"
+          />
+        </div>
+
+        <WordChoice />
+        <GameOverDialog v-if="gameEnded" :scores="sortedScores" />
       </div>
-
-      <div class="word-display text-h6 text-center my-2">
-        📝 {{ displayedWord }}
-      </div>
-
-      <PixiCanvas />
-
-      <ChatBox
-        :messages="messages"
-        v-model:newMessage="newMessage"
-        :send-message="sendMessage"
-        :is-drawer="socket.id === drawerId"
-        :game-ended="gameEnded"
-      />
-
-      <WordChoice />
-
-      <GameOverDialog v-if="gameEnded" />
     </div>
-  </v-card>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, provide } from "vue";
+import { ref, onMounted, onUnmounted, provide, computed } from "vue";
 import { useRoute } from "vue-router";
 import PixiCanvas from "@/components/canvas/PixiCanvas.vue";
 import WordChoice from "@/components/canvas/WordChoice.vue";
@@ -46,6 +64,7 @@ const username = firebaseUser?.displayName || "Guest";
 
 const messages = ref<{ player: { name: string }; message: string }[]>([]);
 const newMessage = ref("");
+const scores = ref<{ name: string; score: number }[]>([]);
 
 const currentWord = ref("");
 const displayedWord = ref("");
@@ -60,66 +79,9 @@ const interval = ref<number | null>(null);
 const gameEnded = ref(false);
 provide("gameEnded", gameEnded);
 
-const sendMessage = () => {
-  if (newMessage.value.trim() === "") return;
-
-  const msg = {
-    roomId,
-    player: { name: username },
-    message: newMessage.value,
-  };
-
-  socket.emit("send_message", msg);
-  newMessage.value = "";
-};
-
-function updateDisplayedWord() {
-  const isDrawer = socket.id === drawerId.value;
-
-  if (isDrawer && currentWord.value) {
-    displayedWord.value = currentWord.value.split("").join(" ");
-  } else {
-    displayedWord.value = revealedWord.value.join(" ");
-  }
-}
-
-function startTimer() {
-  if (gameEnded.value) return;
-
-  if (interval.value) clearInterval(interval.value);
-
-  let revealInterval = wordLength.value < 7 ? 20 : 10;
-  revealedIndices.value = new Set();
-
-  interval.value = setInterval(() => {
-    timeLeft.value--;
-
-    const isDrawer = socket.id === drawerId.value;
-
-    if (timeLeft.value % revealInterval === 0 && timeLeft.value !== 60) {
-      const unrevealed = Array.from(
-        { length: wordLength.value },
-        (_, i) => i
-      ).filter((i) => !revealedIndices.value.has(i));
-
-      if (unrevealed.length > 0) {
-        const index = unrevealed[Math.floor(Math.random() * unrevealed.length)];
-        revealedIndices.value.add(index);
-
-        if (isDrawer && currentWord.value) {
-          const letter = currentWord.value[index];
-          socket.emit("reveal_letter", { roomId, index, letter });
-        }
-      }
-    }
-
-    if (timeLeft.value <= 0) {
-      clearInterval(interval.value!);
-      interval.value = null;
-      socket.emit("end_round", roomId);
-    }
-  }, 1000);
-}
+const sortedScores = computed(() =>
+  [...scores.value].sort((a, b) => b.score - a.score)
+);
 
 onMounted(() => {
   socket.emit("join_lobby", {
@@ -129,6 +91,30 @@ onMounted(() => {
 
   socket.on("receive_message", (msg) => {
     messages.value.push(msg);
+  });
+
+  socket.on(
+    "update_scores",
+    ({ players }: { players: { name: string; score: number }[] }) => {
+      scores.value = players;
+    }
+  );
+
+  socket.on("update_lobby", (data: any) => {
+    const players = data.players;
+
+    if (!Array.isArray(players)) {
+      console.warn("Expected players array, got:", players);
+      return;
+    }
+
+    scores.value = players.map((p: any) => ({
+      name: p.name ?? "Unknown",
+      score: p.score ?? 0,
+    }));
+
+    totalRounds.value = data.rounds;
+    currentRound.value = data.currentRound;
   });
 
   socket.on(
@@ -179,38 +165,189 @@ onUnmounted(() => {
   socket.off("round_started");
   socket.off("set_word");
   socket.off("reveal_letter");
+  socket.off("update_scores");
   socket.off("game_over");
+
   if (interval.value) {
     clearInterval(interval.value);
     interval.value = null;
   }
 });
+
+const sendMessage = () => {
+  if (newMessage.value.trim() === "") return;
+  socket.emit("send_message", {
+    roomId,
+    player: { name: username },
+    message: newMessage.value,
+  });
+  newMessage.value = "";
+};
+
+function updateDisplayedWord() {
+  const isDrawer = socket.id === drawerId.value;
+  displayedWord.value =
+    isDrawer && currentWord.value
+      ? currentWord.value.split("").join(" ")
+      : revealedWord.value.join(" ");
+}
+
+function startTimer() {
+  if (gameEnded.value) return;
+  if (interval.value) clearInterval(interval.value);
+
+  const revealInterval = wordLength.value < 7 ? 20 : 10;
+  revealedIndices.value = new Set();
+
+  interval.value = setInterval(() => {
+    timeLeft.value--;
+
+    if (timeLeft.value % revealInterval === 0 && timeLeft.value !== 60) {
+      const unrevealed = Array.from(
+        { length: wordLength.value },
+        (_, i) => i
+      ).filter((i) => !revealedIndices.value.has(i));
+      if (unrevealed.length > 0) {
+        const index = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+        revealedIndices.value.add(index);
+        if (socket.id === drawerId.value && currentWord.value) {
+          const letter = currentWord.value[index];
+          socket.emit("reveal_letter", { roomId, index, letter });
+        }
+      }
+    }
+
+    if (timeLeft.value <= 0) {
+      clearInterval(interval.value!);
+      interval.value = null;
+      socket.emit("end_round", roomId);
+    }
+  }, 1000);
+}
 </script>
 
 <style scoped>
-.word-display {
-  color: #333;
-  font-weight: bold;
-  background: #f5f5f5;
-  padding: 8px 16px;
-  border-radius: 8px;
-  display: inline-block;
+html,
+body,
+#app {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
-.timer-display {
-  position: absolute;
-  top: 16px;
-  right: 24px;
-  font-size: 20px;
-  font-weight: bold;
-  color: #e53935;
-  background-color: #fff3f3;
-  padding: 6px 12px;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+.scale-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
-.round-counter {
-  font-size: 16px;
-  font-weight: 500;
-  color: #1976d2;
+.scale-wrapper {
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 1%;
+  padding: 0;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.game-grid {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100%;
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  font-size: clamp(0.9rem, 2vw, 1.2rem);
+  padding: 0.5rem;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  background-color: #1e1e1e;
+  color: #ffffff;
+  border: 1px solid #2a2a2a;
+  box-shadow: 0 2px 4px rgba(127, 230, 195, 0.1);
+}
+
+.main {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  gap: 0;
+  overflow: hidden;
+  height: 100%;
+}
+
+.canvas {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #1e1e1e;
+  color: #b7b3b3;
+  border: 1px solid #2a2a2a;
+}
+
+.score {
+  padding: 1rem;
+  overflow-y: auto;
+  font-size: clamp(0.8rem, 1.5vw, 1rem);
+  background-color: #1e1e1e;
+  color: #b7b3b3;
+  border: 1px solid #2a2a2a;
+  height: 100%;
+}
+
+.chat {
+  background-color: #3a363b;
+  border-bottom-right-radius: 12px;
+  border-bottom-left-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: 150px;
+}
+
+.score-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  color: #b7b3b3;
+}
+.player-name {
+  color: #b388ff;
+}
+.player-score {
+  color: #7fe6c3;
+}
+.score-list li {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.4em;
+}
+
+.player-rank {
+  margin-right: 0.5em;
+}
+@media (min-width: 1280px) {
+  .scale-container {
+    margin-top: -80px;
+  }
+  .scale-wrapper {
+    transform: scale(0.8);
+  }
 }
 </style>

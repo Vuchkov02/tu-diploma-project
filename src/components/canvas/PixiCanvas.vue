@@ -2,9 +2,9 @@
   <div ref="canvasContainer" class="canvas-container">
     <canvas id="pixi-canvas"></canvas>
   </div>
-  <v-btn color="error" class="mt-2" @click="clearCanvas" :disabled="!isDrawer">
+  <!-- <v-btn color="error" class="mt-2" @click="clearCanvas" :disabled="!isDrawer">
     Clear
-  </v-btn>
+  </v-btn> -->
 </template>
 
 <script setup lang="ts">
@@ -163,8 +163,7 @@ const initCanvas = async () => {
 
   app = new PIXI.Application({
     view: document.getElementById("pixi-canvas") as HTMLCanvasElement,
-    width: 832,
-    height: 400,
+    resizeTo: canvasContainer.value!, // 🧠 динамично спрямо контейнера!
     backgroundColor: 0xffffff,
     antialias: true,
   });
@@ -197,5 +196,16 @@ onUnmounted(() => {
 <style scoped>
 .canvas-container {
   border: 2px solid #000;
+}
+.canvas-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+
+canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
 }
 </style>
