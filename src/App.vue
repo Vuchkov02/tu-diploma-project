@@ -1,6 +1,12 @@
 <template>
   <v-app class="background">
-    <NavBar v-if="showNavBar" class="navbar" />
+    <NavBar
+      v-if="showNavBar"
+      class="navbar"
+      @toggle-profile="drawerOpen = !drawerOpen"
+    />
+
+    <ProfileDrawer :isOpen="drawerOpen" @close="drawerOpen = false" />
 
     <v-main class="main-content">
       <v-container>
@@ -23,6 +29,7 @@ import { auth } from "@/plugins/firebase";
 import NavBar from "@/components/navbar/NavBar.vue";
 import HeroPage from "@/views/HeroPage.vue";
 import Login from "@/components/authentication/Login.vue";
+import ProfileDrawer from "./components/profile-drawer/ProfileDrawer.vue";
 
 // ✅ Types
 interface Player {
@@ -35,6 +42,7 @@ interface Message {
 }
 
 // 🧠 State
+const drawerOpen = ref(false);
 const name = ref("");
 const lobbyId = ref<string | null>(null);
 const players = ref<Player[]>([]);

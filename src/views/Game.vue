@@ -41,7 +41,11 @@
         </div>
 
         <WordChoice />
-        <GameOverDialog v-if="gameEnded" :scores="sortedScores" />
+        <GameOverDialog
+          v-if="gameEnded"
+          :scores="sortedScores"
+          :totalRounds="totalRounds"
+        />
       </div>
     </div>
   </div>
@@ -56,7 +60,12 @@ import GameOverDialog from "@/gameComponents/GameOverDialog.vue";
 import ChatBox from "@/gameComponents/ChatBox.vue";
 import socket from "@/plugins/socket";
 import { auth } from "@/plugins/firebase";
-
+type ScoreEntry = {
+  name: string;
+  score: number;
+  correctGuesses: number;
+  wasArtist: boolean;
+};
 const route = useRoute();
 const roomId = (route.params as { roomId: string }).roomId;
 const firebaseUser = auth.currentUser;
@@ -64,7 +73,7 @@ const username = firebaseUser?.displayName || "Guest";
 
 const messages = ref<{ player: { name: string }; message: string }[]>([]);
 const newMessage = ref("");
-const scores = ref<{ name: string; score: number }[]>([]);
+const scores = ref<ScoreEntry[]>([]);
 
 const currentWord = ref("");
 const displayedWord = ref("");
@@ -93,12 +102,14 @@ onMounted(() => {
     messages.value.push(msg);
   });
 
-  socket.on(
-    "update_scores",
-    ({ players }: { players: { name: string; score: number }[] }) => {
-      scores.value = players;
-    }
-  );
+  socket.on("update_scores", ({ players }: { players: any[] }) => {
+    scores.value = players.map((p: any) => ({
+      name: p.name ?? "Unknown",
+      score: p.score ?? 0,
+      correctGuesses: p.correctGuesses ?? 0,
+      wasArtist: p.id === drawerId.value,
+    }));
+  });
 
   socket.on("update_lobby", (data: any) => {
     const players = data.players;
@@ -111,6 +122,8 @@ onMounted(() => {
     scores.value = players.map((p: any) => ({
       name: p.name ?? "Unknown",
       score: p.score ?? 0,
+      correctGuesses: p.correctGuesses ?? 0,
+      wasArtist: p.id === drawerId.value,
     }));
 
     totalRounds.value = data.rounds;

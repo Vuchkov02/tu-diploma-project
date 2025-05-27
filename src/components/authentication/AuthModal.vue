@@ -11,7 +11,12 @@
           label="Username"
           outlined
         ></v-text-field>
-        <v-text-field v-model="email" label="Email" type="email" outlined></v-text-field>
+        <v-text-field
+          v-model="email"
+          label="Email"
+          type="email"
+          outlined
+        ></v-text-field>
         <v-text-field
           v-model="password"
           label="Password"
@@ -94,10 +99,19 @@ const signup = async () => {
     // Set the username in Firebase Auth
     await updateProfile(user, { displayName: username.value });
 
-    // Store username in Firestore
+    // Create full user profile in Firestore
     await setDoc(doc(db, "users", user.uid), {
-      username: username.value,
-      email: user.email,
+      displayName: username.value,
+      email: user.email || "",
+      playerStats: {
+        xp: 0,
+        level: 1,
+        gamesPlayed: 0,
+        wordsGuessed: 0,
+        drawingsDone: 0,
+        wins: 0,
+      },
+      createdAt: new Date(),
     });
 
     alert("✅ Account created!");
@@ -106,7 +120,6 @@ const signup = async () => {
     alert(error);
   }
 };
-
 
 // **Expose for HeroPage.vue**
 defineExpose({ showDialog, isLogin });

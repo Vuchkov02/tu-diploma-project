@@ -5,7 +5,8 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "backend": "nodemon server.js",
+    "backend": "node backend/server.js",
+    "import-words": "node backend/scripts/importWords.js",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",

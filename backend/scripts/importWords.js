@@ -10,7 +10,7 @@ const __dirname = dirname(__filename);
 
 // ✅ Зареждане на service account JSON
 const serviceAccount = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "firebase-key.json"), "utf-8")
+  fs.readFileSync(path.join(__dirname, "../../firebase-key.json"), "utf-8")
 );
 
 admin.initializeApp({
@@ -36,7 +36,7 @@ async function importWordsFromFile(filePath, docId) {
 
 async function main() {
   try {
-    const basePath = path.join(__dirname, "resources");
+    const basePath = path.join(__dirname, "../../resources");
 
     await importWordsFromFile(path.join(basePath, "words-english.json"), "words-english");
     await importWordsFromFile(path.join(basePath, "words-bulgarian.json"), "words-bulgarian");

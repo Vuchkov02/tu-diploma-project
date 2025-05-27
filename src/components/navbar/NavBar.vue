@@ -8,7 +8,12 @@
     <v-container class="d-flex align-center px-0" fluid>
       <!-- Profile Info on the Left -->
       <div class="d-flex align-center">
-        <v-btn icon class="ml-2" :style="{ color: '#94F8D0' }">
+        <v-btn
+          icon
+          class="ml-2"
+          :style="{ color: '#94F8D0' }"
+          @click="$emit('toggle-profile')"
+        >
           <v-icon>mdi-account</v-icon>
         </v-btn>
         <span class="ml-2" style="color: #94f8d0">

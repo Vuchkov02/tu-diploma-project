@@ -77,7 +77,7 @@ onUnmounted(() => clearInterval(interval));
   overflow: hidden;
   vertical-align: bottom;
   padding-top: 0.2em;
-  padding-bottom: 0.2em;
+  padding-bottom: 1em;
 }
 
 .highlight-word {
