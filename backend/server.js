@@ -19,7 +19,6 @@ const io = new Server(server, {
 app.use(cors());
 app.get("/", (_, res) => res.send("🎨 Skribbl.io Clone Server Running..."));
 
-// 🧠 Централизирани състояния
 const lobbies = {};
 const wordPools = {};
 

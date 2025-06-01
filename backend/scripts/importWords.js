@@ -4,11 +4,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 
-// ⛏️ Симулиране на __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// ✅ Зареждане на service account JSON
 const serviceAccount = JSON.parse(
   fs.readFileSync(path.join(__dirname, "../../firebase-key.json"), "utf-8")
 );

@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import LoginRegisterPage from '@/views/LoginRegisterPage.vue';
-import Lobby from '@/views/LobbyPage.vue';
-import Game from '@/views/Game.vue';
+import LoginRegisterPage from '@/views/LoginRegisterPageView.vue';
+import Lobby from '@/views/LobbyPageView.vue';
+import Game from '@/views/GameView.vue';
 
 const routes = [
   { path: '/login', component: LoginRegisterPage },

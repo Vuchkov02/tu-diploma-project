@@ -21,7 +21,7 @@ export default function registerChatHandlers(io, socket, lobbies) {
         const guesser = lobby.players.find((p) => p.name === player.name);
         if (guesser) {
           guesser.score += guesserPoints;
-          guesser.correctGuesses = (guesser.correctGuesses || 0) + 1; // ✅ реално броене
+          guesser.correctGuesses = (guesser.correctGuesses || 0) + 1; 
         }
 
         if (drawer) drawer.score += drawerBonus;
@@ -31,7 +31,6 @@ export default function registerChatHandlers(io, socket, lobbies) {
           message: `🎉 guessed the word! (+${guesserPoints} pts)`,
         });
 
-        // ✅ Изпрати реални correctGuesses
         io.to(roomId).emit("update_scores", {
           players: lobby.players.map((p) => ({
             id: p.id,

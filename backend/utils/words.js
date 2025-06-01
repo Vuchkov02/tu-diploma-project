@@ -1,6 +1,5 @@
 import { initializeFirebase, firestore } from "../firebase/init.js";
 
-// ❗ Уверяваме се, че Firebase е инициализиран
 initializeFirebase();
 
 export async function loadWordsForLanguage(lang, wordPools) {

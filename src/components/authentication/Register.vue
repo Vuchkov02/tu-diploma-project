@@ -1,41 +1,63 @@
 <template>
-    <v-dialog v-model="showDialog" persistent max-width="400px">
-      <v-card>
-        <v-card-title class="text-h5">Sign Up</v-card-title>
-        <v-card-text>
-          <v-text-field v-model="email" label="Email" outlined></v-text-field>
-          <v-text-field v-model="password" label="Password" type="password" outlined></v-text-field>
-        </v-card-text>
-        <v-card-actions>
-          <v-btn color="primary" block @click="signup">Register</v-btn>
-          <v-btn text block @click="$emit('close')">Cancel</v-btn>
-        </v-card-actions>
-        <v-card-actions>
-          <v-btn text block @click="$emit('switchToLogin')">Already have an account? Login</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <div>
+      <v-text-field v-model="username" label="Username" outlined />
+      <v-text-field v-model="email" label="Email" type="email" outlined />
+      <v-text-field v-model="password" label="Password" type="password" outlined />
+      <v-btn color="primary" block @click="signup">Register</v-btn>
+      <v-divider
+  :thickness="20"
+  class="border-opacity-0"
+  color="info"
+></v-divider>      <v-btn color="gray" block @click="emit('success')">Cancel</v-btn>
+    </div>
   </template>
   
   <script setup lang="ts">
-  import { ref, defineExpose } from "vue";
-  import { auth } from "@/plugins/firebase";
-  import { createUserWithEmailAndPassword } from "firebase/auth";
+  import { ref } from "vue";
+  import { auth, db } from "@/plugins/firebase";
+  import {
+    createUserWithEmailAndPassword,
+    updateProfile,
+  } from "firebase/auth";
+  import { doc, setDoc } from "firebase/firestore";
   
+  const emit = defineEmits(["success"]);
+  
+  const username = ref("");
   const email = ref("");
   const password = ref("");
-  const showDialog = ref(false);
   
   const signup = async () => {
+    if (!username.value.trim()) {
+      alert("❌ Please enter a username");
+      return;
+    }
+  
     try {
-      await createUserWithEmailAndPassword(auth, email.value, password.value);
-      alert("Account created successfully!");
-      showDialog.value = false;
+      const userCredential = await createUserWithEmailAndPassword(auth, email.value, password.value);
+      const user = userCredential.user;
+  
+      await updateProfile(user, { displayName: username.value });
+  
+      await setDoc(doc(db, "users", user.uid), {
+        displayName: username.value,
+        email: user.email || "",
+        playerStats: {
+          xp: 0,
+          level: 1,
+          gamesPlayed: 0,
+          wordsGuessed: 0,
+          drawingsDone: 0,
+          wins: 0,
+        },
+        createdAt: new Date(),
+      });
+  
+      alert("✅ Account created!");
+      emit("success");
     } catch (error) {
       alert(error);
     }
   };
-  
-  defineExpose({ showDialog });
   </script>
   

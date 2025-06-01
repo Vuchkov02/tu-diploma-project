@@ -1,37 +1,14 @@
 <template>
-  <v-dialog v-model="showDialog" persistent max-width="400px">
+  <v-dialog v-model="showDialog" max-width="400px">
     <v-card>
       <v-card-title class="text-h5">
         {{ isLogin ? "Login" : "Sign Up" }}
       </v-card-title>
-      <v-card-text>
-        <v-text-field
-          v-if="!isLogin"
-          v-model="username"
-          label="Username"
-          outlined
-        ></v-text-field>
-        <v-text-field
-          v-model="email"
-          label="Email"
-          type="email"
-          outlined
-        ></v-text-field>
-        <v-text-field
-          v-model="password"
-          label="Password"
-          type="password"
-          outlined
-        ></v-text-field>
-      </v-card-text>
 
-      <!-- 💡 Fix: Buttons now properly displayed -->
-      <v-card-actions class="d-flex flex-column">
-        <v-btn color="primary" block @click="isLogin ? login() : signup()">
-          {{ isLogin ? "Login" : "Register" }}
-        </v-btn>
-        <v-btn text block @click="closeModal">Cancel</v-btn>
-      </v-card-actions>
+      <v-card-text>
+        <LoginForm v-if="isLogin" @success="closeModal" />
+        <RegisterForm v-else @success="closeModal" />
+      </v-card-text>
 
       <v-card-actions class="d-flex justify-center">
         <v-btn text @click="toggleMode">
@@ -44,89 +21,23 @@
 
 <script setup lang="ts">
 import { ref, defineExpose } from "vue";
-import { auth, db } from "@/plugins/firebase";
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
-  updateProfile,
-} from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import LoginForm from "./Login.vue";
+import RegisterForm from "./Register.vue";
 
-const email = ref("");
-const password = ref("");
-const username = ref("");
-const isLogin = ref(true);
 const showDialog = ref(false);
+const isLogin = ref(true);
 
-// Toggle between Login and Register
 const toggleMode = () => {
   isLogin.value = !isLogin.value;
 };
-
-// Close Modal
 const closeModal = () => {
   showDialog.value = false;
 };
 
-// Login Function
-const login = async () => {
-  try {
-    await signInWithEmailAndPassword(auth, email.value, password.value);
-    alert("✅ Logged in successfully!");
-    closeModal();
-  } catch (error) {
-    alert(error);
-  }
-};
-
-// Signup Function (Now Uses Username)
-const signup = async () => {
-  if (!username.value.trim()) {
-    alert("❌ Please enter a username");
-    return;
-  }
-
-  try {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email.value,
-      password.value
-    );
-    const user = userCredential.user;
-
-    // Set the username in Firebase Auth
-    await updateProfile(user, { displayName: username.value });
-
-    // Create full user profile in Firestore
-    await setDoc(doc(db, "users", user.uid), {
-      displayName: username.value,
-      email: user.email || "",
-      playerStats: {
-        xp: 0,
-        level: 1,
-        gamesPlayed: 0,
-        wordsGuessed: 0,
-        drawingsDone: 0,
-        wins: 0,
-      },
-      createdAt: new Date(),
-    });
-
-    alert("✅ Account created!");
-    closeModal();
-  } catch (error) {
-    alert(error);
-  }
-};
-
-// **Expose for HeroPage.vue**
 defineExpose({ showDialog, isLogin });
 </script>
 
 <style scoped>
-/* Make sure buttons are properly displayed */
 .v-card-actions {
   padding: 16px;
 }

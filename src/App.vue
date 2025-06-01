@@ -15,7 +15,6 @@
       </v-container>
     </v-main>
 
-    <!-- 🔑 Login Dialog -->
     <Login ref="loginDialogRef" />
   </v-app>
 </template>
@@ -27,11 +26,9 @@ import socket from "@/plugins/socket";
 import { auth } from "@/plugins/firebase";
 
 import NavBar from "@/components/navbar/NavBar.vue";
-import HeroPage from "@/views/HeroPage.vue";
-import Login from "@/components/authentication/Login.vue";
+import HeroPage from "@/views/HeroPageView.vue";
 import ProfileDrawer from "./components/profile-drawer/ProfileDrawer.vue";
 
-// ✅ Types
 interface Player {
   id: string;
   name: string;
@@ -41,7 +38,6 @@ interface Message {
   text: string;
 }
 
-// 🧠 State
 const drawerOpen = ref(false);
 const name = ref("");
 const lobbyId = ref<string | null>(null);
@@ -55,7 +51,6 @@ const newMessage = ref("");
 const route = useRoute();
 const loginDialogRef = ref();
 
-// 👂 Global event for opening login dialog
 onMounted(() => {
   window.addEventListener("open-login-dialog", () => {
     if (loginDialogRef.value) {
@@ -68,7 +63,6 @@ onUnmounted(() => {
   window.removeEventListener("open-login-dialog", () => {});
 });
 
-// 🧠 Auth state + Hero logic
 onMounted(() => {
   auth.onAuthStateChanged((user) => {
     showNavBar.value = !!user;
@@ -89,7 +83,6 @@ function updateHeroVisibility() {
   showHero.value = !isLoggedIn && route.path === "/";
 }
 
-// 🧩 Socket events
 onMounted(() => {
   socket.on("update_lobby", (updatedPlayers: Player[]) => {
     players.value = updatedPlayers;
