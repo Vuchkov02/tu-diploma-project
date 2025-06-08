@@ -24,7 +24,6 @@
       />
     </v-list>
 
-    <!-- Диалог със статистики -->
     <StatsDialog ref="statsDialogRef" />
   </v-navigation-drawer>
 </template>
@@ -41,7 +40,6 @@ const emit = defineEmits(["close"]);
 const internalOpen = ref(props.isOpen);
 const statsDialogRef = ref();
 
-// синхронизация с външен проп
 watch(
   () => props.isOpen,
   (val) => {
@@ -49,7 +47,6 @@ watch(
   }
 );
 
-// известяване когато drawer се затвори отвътре
 watch(internalOpen, (val) => {
   if (!val) emit("close");
 });

@@ -30,7 +30,7 @@ const password = ref("");
 const login = async () => {
   try {
     await signInWithEmailAndPassword(auth, email.value, password.value);
-    alert("✅ Logged in successfully!");
+    alert("Logged in successfully!");
     emit("success");
   } catch (error) {
     alert(error);

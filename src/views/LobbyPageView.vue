@@ -8,7 +8,6 @@
         color: '#94F8D0',
       }"
     >
-      <!-- Заглавие -->
       <v-card-title
         class="text-h4 text-center mb-6"
         style="font-family: 'DynaPuff', cursive; color: #c99cff"
@@ -16,7 +15,6 @@
         LOBBY
       </v-card-title>
 
-      <!-- Бутони -->
       <v-row dense class="justify-center">
         <v-col cols="12" class="mb-3 text-center">
           <CreateLobbyDialog
@@ -32,7 +30,6 @@
         </v-col>
       </v-row>
 
-      <!-- Информация за лобито -->
       <v-divider class="my-6" :style="{ borderColor: '#94F8D0' }" />
 
       <v-card
@@ -49,7 +46,7 @@
           class="text-h6 d-flex align-center"
           style="color: #c99cff"
         >
-          🆔 Lobby ID:
+           Lobby ID:
           <span style="color: white; margin-left: 8px; margin-right: 8px">
             {{ lobbyId }}
           </span>
@@ -90,7 +87,7 @@
             @click="startGame"
             style="background-color: #94f8d0; color: #1e1d26; font-weight: bold"
           >
-            🚀 Start Game
+             Start Game
           </v-btn>
         </div>
       </v-card>
@@ -123,7 +120,7 @@ const lobbyInfo = ref<{ players: any[]; rounds: number; currentRound: number }>(
 const copyToClipboard = () => {
   if (lobbyId.value) {
     navigator.clipboard.writeText(lobbyId.value).then(() => {
-      console.log("📋 Lobby ID copied!");
+      console.log("Lobby ID copied!");
     });
   }
 };
@@ -146,7 +143,7 @@ onMounted(() => {
     joinLobbyById(lobbyId.value);
   }
   socket.on("lobby_closed", () => {
-    alert("🚪 The host has closed the lobby.");
+    alert("The host has closed the lobby.");
     router.replace("/lobby");
     lobbyId.value = null;
     players.value = [];
@@ -168,7 +165,7 @@ onMounted(() => {
   });
 
   socket.on("lobby_not_found", () => {
-    console.warn("⚠️ Lobby not found. Resetting state.");
+    console.warn("Lobby not found. Resetting state.");
     lobbyId.value = null;
     players.value = [];
     isHost.value = false;

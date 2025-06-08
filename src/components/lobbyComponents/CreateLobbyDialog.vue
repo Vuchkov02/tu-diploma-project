@@ -48,7 +48,7 @@ import { auth } from "@/plugins/firebase";
 const dialog = ref(false);
 const maxPlayers = ref(4);
 const language = ref("English");
-const rounds = ref(3); // default number of rounds
+const rounds = ref(3); 
 const router = useRouter();
 
 const createLobby = () => {

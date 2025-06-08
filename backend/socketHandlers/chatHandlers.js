@@ -28,7 +28,7 @@ export default function registerChatHandlers(io, socket, lobbies) {
 
         io.to(roomId).emit("receive_message", {
           player: { name: player.name, system: true },
-          message: `🎉 guessed the word! (+${guesserPoints} pts)`,
+          message: `guessed the word! (+${guesserPoints} pts)`,
         });
 
         io.to(roomId).emit("update_scores", {

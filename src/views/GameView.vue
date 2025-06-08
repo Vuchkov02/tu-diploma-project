@@ -19,7 +19,7 @@
             <PixiCanvas />
           </div>
           <div class="score">
-            <h3>🏆 Leaderboard</h3>
+            <h3>Leaderboard</h3>
             <ul class="score-list">
               <li v-for="(player, index) in sortedScores" :key="player.name">
                 <span class="player-rank">{{ index + 1 }}.</span>

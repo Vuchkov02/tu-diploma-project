@@ -1,16 +1,13 @@
 <template>
   <v-dialog v-model="dialog" max-width="600">
     <v-card class="bg-[#1E1D26] text-white pb-8 pt-6 px-6 font-dynapuff">
-      <!-- Header -->
       <h2 class="text-2xl font-bold text-mint-400 mb-4">
         📊 Player Statistics
       </h2>
 
       <v-divider class="border-mint-400 mb-6"></v-divider>
 
-      <!-- Stats Content (left-aligned) -->
       <div class="space-y-4">
-        <!-- Вътре в <div class="space-y-4"> -->
         <p class="text-base">
           🕹 Games Played:
           <span class="text-gray-400">{{ userStats.gamesPlayed }}</span>
@@ -38,12 +35,10 @@
           {{ userStats.xp % 1000 }} / 1000 XP
         </p>
 
-        <!-- За ранк -->
         <p class="text-base">
           🧬 Level: <span class="text-gray-400">{{ userStats.level }}</span>
         </p>
 
-        <!-- Центрирано Rank представяне -->
         <div
           class="flex flex-col items-center justify-center mt-10 text-center"
         >

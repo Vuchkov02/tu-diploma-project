@@ -24,7 +24,6 @@
           </div>
         </div>
 
-        <!-- 🎯 Current Player XP & Level -->
         <div v-if="currentPlayer" class="mt-6">
           <p class="text-base mb-1" style="color: #94f8d0">
             +{{ gainedXp }} XP earned!

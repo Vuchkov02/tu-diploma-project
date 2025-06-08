@@ -159,7 +159,7 @@ const setupSocketListeners = () => {
 
   socket.on("round_started", ({ drawerId }) => {
     isDrawer.value = socket.id === drawerId;
-    console.log("🎨 You are drawer:", isDrawer.value);
+    console.log("You are drawer:", isDrawer.value);
   });
 };
 

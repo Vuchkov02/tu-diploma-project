@@ -21,12 +21,12 @@ export function initializeFirebase() {
   });
 
   isInitialized = true;
-  console.log("🔥 Firebase Admin инициализиран");
+  console.log("Firebase Admin инициализиран");
 }
 
 export function firestore() {
   if (!admin.apps.length) {
-    throw new Error("❌ Firebase не е инициализиран");
+    throw new Error("Firebase не е инициализиран");
   }
   return admin.firestore();
 }

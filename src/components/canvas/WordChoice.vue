@@ -9,6 +9,9 @@
   </transition>
 
   <div v-if="visible && !gameEnded" class="word-choice-overlay">
+    <div v-if="visible && !gameEnded" class="choose-word-title">
+      Choose a word to draw
+    </div>
     <div
       class="word-box"
       v-for="(word, index) in words"
@@ -29,7 +32,7 @@ import { useRoute } from "vue-router";
 
 const gameEnded = inject("gameEnded", shallowRef(false));
 const words = ref<string[]>([]);
-const visible = ref(false); 
+const visible = ref(false);
 const showWaitingMessage = ref(false);
 const wordRefs = ref<Array<HTMLElement | null>>([]);
 const route = useRoute();
@@ -154,8 +157,17 @@ const choose = (word: string) => {
   justify-content: center;
   align-items: center;
   pointer-events: none;
+  font-family: "DynaPuff";
 }
-
+.choose-word-title {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #c99cff;
+  margin-bottom: 12px;
+  font-family: "DynaPuff", sans-serif;
+  animation: pulse 2s infinite;
+}
 .waiting-text {
   color: #94f8d0;
   font-size: 2rem;

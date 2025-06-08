@@ -40,7 +40,6 @@
       </v-btn>
     </v-card>
 
-    <!-- Authentication Modal -->
     <AuthModal ref="authModal" />
   </v-container>
 </template>

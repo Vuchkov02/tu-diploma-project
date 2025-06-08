@@ -32,7 +32,7 @@ const password = ref("");
 
 const signup = async () => {
   if (!username.value.trim()) {
-    alert("❌ Please enter a username");
+    alert("Please enter a username");
     return;
   }
 
@@ -60,7 +60,7 @@ const signup = async () => {
       createdAt: new Date(),
     });
 
-    alert("✅ Account created!");
+    alert("Account created!");
     emit("success");
   } catch (error) {
     alert(error);

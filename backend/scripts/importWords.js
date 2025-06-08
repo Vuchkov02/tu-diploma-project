@@ -22,14 +22,14 @@ async function importWordsFromFile(filePath, docId) {
   const { words } = JSON.parse(fileContent);
 
   if (!Array.isArray(words)) {
-    console.error(`❌ Няма 'words' масив в ${filePath}`);
+    console.error(`No 'words' array in ${filePath}`);
     return;
   }
 
   const docRef = db.collection("words").doc(docId);
   await docRef.set({ words });
 
-  console.log(`✅ Качени думи от ${filePath} в '${docId}'`);
+  console.log(`Imported words from ${filePath} in '${docId}'`);
 }
 
 async function main() {
@@ -39,9 +39,9 @@ async function main() {
     await importWordsFromFile(path.join(basePath, "words-english.json"), "words-english");
     await importWordsFromFile(path.join(basePath, "words-bulgarian.json"), "words-bulgarian");
 
-    console.log("🎉 Всичко е качено успешно!");
+    console.log("Everything is up");
   } catch (err) {
-    console.error("🔥 Грешка при импорта:", err);
+    console.error("Error importing:", err);
   }
 }
 

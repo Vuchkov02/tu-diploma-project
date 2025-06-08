@@ -19,7 +19,7 @@ export default function registerGameHandlers(io, socket, lobbies, wordPools) {
       const options = wordPool.sort(() => 0.5 - Math.random()).slice(0, 3);
       io.to(drawer.id).emit("choose_word", options);
     } catch (error) {
-      console.error("🔥 Error loading words:", error);
+      console.error("Error loading words:", error);
     }
   });
 
@@ -35,11 +35,11 @@ export default function registerGameHandlers(io, socket, lobbies, wordPools) {
 
     const drawer = lobby.players[lobby.drawerIndex % lobby.players.length];
     if (!drawer || drawer.id !== socket.id) {
-      console.warn("🚨 Someone else tried to choose word!");
+      console.warn("Someone else tried to choose word!");
       return;
     }
 
-    console.log("✅ Word chosen:", word, "length:", word.length);
+    console.log("Word chosen:", word, "length:", word.length);
 
     socket.to(roomId).emit("word_chosen_status");
 

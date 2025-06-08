@@ -6,7 +6,6 @@
     height="64"
   >
     <v-container class="d-flex align-center px-0" fluid>
-      <!-- Profile Info on the Left -->
       <div class="d-flex align-center">
         <v-btn
           icon
@@ -21,7 +20,6 @@
         </span>
       </div>
 
-      <!-- Centered Title -->
       <div
         class="flex-grow-1 d-flex justify-center"
         style="margin-right: 90px"
@@ -34,7 +32,6 @@
         </span>
       </div>
 
-      <!-- Logout Button -->
       <v-btn icon @click="logout" class="mr-2" color="error">
         <v-icon>mdi-logout</v-icon>
       </v-btn>
@@ -51,21 +48,19 @@ import { signOut, onAuthStateChanged } from "firebase/auth";
 const router = useRouter();
 const user = ref(auth.currentUser);
 
-// Watch for authentication state changes
 onMounted(() => {
   onAuthStateChanged(auth, async (currentUser) => {
     if (currentUser) {
-      await currentUser.reload(); // 🔄 Ensures latest data
-      user.value = auth.currentUser; // ✅ Now it should have `displayName`
+      await currentUser.reload();
+      user.value = auth.currentUser; 
     }
   });
 });
-// Logout
 const logout = async () => {
   try {
     await signOut(auth);
-    sessionStorage.clear(); // ✅ Ensure session is cleared
-    router.push("/"); // ✅ Redirect to Hero Page after logout
+    sessionStorage.clear(); 
+    router.push("/"); 
   } catch (error) {
     console.error("Logout Error:", error);
   }
