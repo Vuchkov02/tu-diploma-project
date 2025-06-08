@@ -45,8 +45,27 @@
           borderRadius: '12px',
         }"
       >
-        <v-card-title class="text-h6" style="color: #c99cff">
-          🆔 Lobby ID: <span style="color: white"> {{ lobbyId }} </span>
+        <v-card-title
+          class="text-h6 d-flex align-center"
+          style="color: #c99cff"
+        >
+          🆔 Lobby ID:
+          <span style="color: white; margin-left: 8px; margin-right: 8px">
+            {{ lobbyId }}
+          </span>
+          <v-tooltip text="Copy to clipboard" location="top">
+            <template #activator="{ props }">
+              <v-btn
+                v-bind="props"
+                icon
+                size="small"
+                @click="copyToClipboard"
+                style="color: #94f8d0"
+              >
+                <v-icon>mdi-content-copy</v-icon>
+              </v-btn>
+            </template>
+          </v-tooltip>
         </v-card-title>
 
         <v-card-subtitle class="text-subtitle-1 mb-2" style="color: #94f8d0">
@@ -101,7 +120,13 @@ const lobbyInfo = ref<{ players: any[]; rounds: number; currentRound: number }>(
     currentRound: 1,
   }
 );
-
+const copyToClipboard = () => {
+  if (lobbyId.value) {
+    navigator.clipboard.writeText(lobbyId.value).then(() => {
+      console.log("📋 Lobby ID copied!");
+    });
+  }
+};
 const startGame = () => {
   if (!lobbyId.value) return;
   socket.emit("start_game", lobbyId.value);

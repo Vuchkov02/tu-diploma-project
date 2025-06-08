@@ -3,7 +3,7 @@ import { initializeFirebase, firestore } from "../firebase/init.js";
 initializeFirebase();
 
 export async function loadWordsForLanguage(lang, wordPools) {
-  const db = firestore(); // 🧠 взимаме инстанцията след init
+  const db = firestore(); 
 
   if (wordPools[lang]) return wordPools[lang];
 

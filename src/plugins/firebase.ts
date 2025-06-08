@@ -20,9 +20,9 @@ const firebaseConfig = {
   const functions = getFunctions(app);
   setPersistence(auth, browserSessionPersistence)
   .then(() => {
-    console.log("✅ Firebase Auth Session Persistence Set to SESSION");
+    console.log("Firebase Auth Session Persistence Set to SESSION");
   })
   .catch((error) => {
-    console.error("❌ Error setting session persistence:", error);
+    console.error("Error setting session persistence:", error);
   });
   export { app, auth, db, storage, functions };

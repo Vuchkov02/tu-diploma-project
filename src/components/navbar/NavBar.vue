@@ -24,7 +24,7 @@
       <!-- Centered Title -->
       <div
         class="flex-grow-1 d-flex justify-center"
-        style="margin-right: 180px"
+        style="margin-right: 90px"
       >
         <span
           class="text-h6 font-weight-bold"

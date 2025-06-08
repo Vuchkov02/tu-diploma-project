@@ -26,10 +26,20 @@ export default function registerGameHandlers(io, socket, lobbies, wordPools) {
   socket.on("set_word", ({ roomId, word, drawerId }) => {
     io.to(drawerId).emit("set_word", word);
   });
-
+  socket.on("reveal_letter", ({ roomId, index, letter }) => {
+    io.to(roomId).emit("reveal_letter", { index, letter });
+  });
   socket.on("word_chosen", ({ roomId, word }) => {
     const lobby = lobbies[roomId];
     if (!lobby) return;
+
+    const drawer = lobby.players[lobby.drawerIndex % lobby.players.length];
+    if (!drawer || drawer.id !== socket.id) {
+      console.warn("🚨 Someone else tried to choose word!");
+      return;
+    }
+
+    console.log("✅ Word chosen:", word, "length:", word.length);
 
     socket.to(roomId).emit("word_chosen_status");
 

@@ -209,7 +209,7 @@ function startTimer() {
   if (gameEnded.value) return;
   if (interval.value) clearInterval(interval.value);
 
-  const revealInterval = wordLength.value < 7 ? 20 : 10;
+  const revealInterval = wordLength.value < 7 ? 10 : 20;
   revealedIndices.value = new Set();
 
   interval.value = setInterval(() => {

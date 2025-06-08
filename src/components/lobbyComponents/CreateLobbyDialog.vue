@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="dialog" max-width="400">
+  <v-dialog v-model="dialog" max-width="400" style="font-family: DynaPuff">
     <template #activator="{ props }">
       <v-btn color="primary" v-bind="props">Create Lobby</v-btn>
     </template>
@@ -61,7 +61,7 @@ const createLobby = () => {
     {
       maxPlayers: maxPlayers.value,
       language: language.value,
-      rounds: rounds.value, // 👈 pass to server
+      rounds: rounds.value, 
       player: { id: socket.id, name: username },
     },
     (res: { roomId: string }) => {

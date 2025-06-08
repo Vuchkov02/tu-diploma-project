@@ -17,7 +17,7 @@ const io = new Server(server, {
 });
 
 app.use(cors());
-app.get("/", (_, res) => res.send("🎨 Skribbl.io Clone Server Running..."));
+app.get("/", (_, res) => res.send("🎨 DRAW & GUESS Server Running..."));
 
 const lobbies = {};
 const wordPools = {};

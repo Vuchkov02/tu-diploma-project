@@ -88,7 +88,6 @@ const sortedScores = computed(() =>
   [...props.scores].sort((a, b) => b.score - a.score)
 );
 
-// 🧠 Player stats
 const auth = getAuth();
 const db = getFirestore();
 const currentPlayer = ref<{ name: string; score: number } | null>(null);

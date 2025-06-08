@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="dialog" max-width="400">
+  <v-dialog v-model="dialog" max-width="400" style="font-family: DynaPuff">
     <template #activator="{ props }">
       <v-btn color="secondary" v-bind="props">Join Lobby</v-btn>
     </template>

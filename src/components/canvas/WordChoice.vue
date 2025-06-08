@@ -1,5 +1,4 @@
 <template>
-  <!-- 👀 Познавачите виждат това съобщение -->
   <transition name="fade">
     <div
       v-show="!visible && !gameEnded && showWaitingMessage"
@@ -9,7 +8,6 @@
     </div>
   </transition>
 
-  <!-- ✍️ Само рисувачът вижда избор на дума -->
   <div v-if="visible && !gameEnded" class="word-choice-overlay">
     <div
       class="word-box"
@@ -29,20 +27,17 @@ import gsap from "gsap";
 import socket from "@/plugins/socket";
 import { useRoute } from "vue-router";
 
-// 🧠 Състояние на играта
 const gameEnded = inject("gameEnded", shallowRef(false));
 const words = ref<string[]>([]);
-const visible = ref(false); // Ако е true – този потребител е рисувач
+const visible = ref(false); 
 const showWaitingMessage = ref(false);
 const wordRefs = ref<Array<HTMLElement | null>>([]);
 const route = useRoute();
 
-// 📌 DOM референции за анимация
 const setWordRef = (el: unknown, index: number) => {
   wordRefs.value[index] = el instanceof HTMLElement ? el : null;
 };
 
-// 👂 Покажи думите на рисувача
 socket.on("choose_word", async (options: string[]) => {
   if (gameEnded.value) return;
 
@@ -70,18 +65,15 @@ socket.on("choose_word", async (options: string[]) => {
   });
 });
 
-// 👂 Познавачите разбират, че някой избира дума
 socket.on("choose_word_status", () => {
   visible.value = false;
   showWaitingMessage.value = true;
 });
 
-// 👂 След като думата е избрана — скрий overlay-а
 socket.on("word_chosen_status", () => {
   showWaitingMessage.value = false;
 });
 
-// 📤 Рисувачът избира дума
 const choose = (word: string) => {
   const roomId = (route.query.lobbyId ||
     (route.params as any).roomId) as string;

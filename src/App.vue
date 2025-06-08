@@ -14,8 +14,6 @@
         <router-view v-else />
       </v-container>
     </v-main>
-
-    <Login ref="loginDialogRef" />
   </v-app>
 </template>
 

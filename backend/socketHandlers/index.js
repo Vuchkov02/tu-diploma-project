@@ -3,9 +3,6 @@ import registerGameHandlers from "./gameHandlers.js";
 import registerDrawHandlers from "./drawHandlers.js";
 import registerChatHandlers from "./chatHandlers.js";
 
-/**
- * Регистрира всички socket handler-и за един socket.
- */
 export function registerSocketHandlers(io, socket, lobbies, wordPools) {
   registerLobbyHandlers(io, socket, lobbies);
   registerGameHandlers(io, socket, lobbies, wordPools);
