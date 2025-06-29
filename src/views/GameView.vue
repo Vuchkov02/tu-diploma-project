@@ -53,7 +53,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, provide, computed } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import PixiCanvas from "@/components/canvas/PixiCanvas.vue";
 import WordChoice from "@/components/canvas/WordChoice.vue";
 import GameOverDialog from "@/gameComponents/GameOverDialog.vue";
@@ -67,6 +67,7 @@ type ScoreEntry = {
   wasArtist: boolean;
 };
 const route = useRoute();
+const router = useRouter();
 const roomId = (route.params as { roomId: string }).roomId;
 const firebaseUser = auth.currentUser;
 const username = firebaseUser?.displayName || "Guest";
@@ -74,6 +75,7 @@ const username = firebaseUser?.displayName || "Guest";
 const messages = ref<{ player: { name: string }; message: string }[]>([]);
 const newMessage = ref("");
 const scores = ref<ScoreEntry[]>([]);
+const gameStarted = ref(false);
 
 const currentWord = ref("");
 const displayedWord = ref("");
@@ -93,6 +95,12 @@ const sortedScores = computed(() =>
 );
 
 onMounted(() => {
+  socket.on("player_left", ({ message }) => {
+    if (!gameStarted.value) return; 
+
+    alert(message);
+    router.push("/lobby");
+  });
   socket.emit("join_lobby", {
     roomId,
     player: { name: username },
@@ -138,6 +146,8 @@ onMounted(() => {
       currentRound: round,
       totalRounds: total,
     }) => {
+      gameStarted.value = true;
+
       if (gameEnded.value) return;
       drawerId.value = id;
       wordLength.value = len;
