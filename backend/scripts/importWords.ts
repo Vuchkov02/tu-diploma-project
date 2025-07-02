@@ -17,9 +17,13 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-async function importWordsFromFile(filePath, docId) {
+interface WordData {
+  words: string[];
+}
+
+async function importWordsFromFile(filePath: string, docId: string): Promise<void> {
   const fileContent = fs.readFileSync(filePath, "utf-8");
-  const { words } = JSON.parse(fileContent);
+  const { words } = JSON.parse(fileContent) as WordData;
 
   if (!Array.isArray(words)) {
     console.error(`No 'words' array in ${filePath}`);
@@ -32,7 +36,7 @@ async function importWordsFromFile(filePath, docId) {
   console.log(`Imported words from ${filePath} in '${docId}'`);
 }
 
-async function main() {
+async function main(): Promise<void> {
   try {
     const basePath = path.join(__dirname, "../../resources");
 
@@ -45,4 +49,4 @@ async function main() {
   }
 }
 
-main();
+main(); 

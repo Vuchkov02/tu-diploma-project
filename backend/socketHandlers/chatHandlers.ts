@@ -1,5 +1,14 @@
-export default function registerChatHandlers(io, socket, lobbies) {
-  socket.on("send_message", ({ roomId, message, player }) => {
+import { Server, Socket } from "socket.io";
+import { Lobbies, ChatMessageData, WordPools } from "../types/index.js";
+import { endRound } from "./gameHandlers.js";
+
+export default function registerChatHandlers(
+  io: Server, 
+  socket: Socket, 
+  lobbies: Lobbies, 
+  wordPools: WordPools
+): void {
+  socket.on("send_message", ({ roomId, message, player }: ChatMessageData) => {
     const lobby = lobbies[roomId];
     if (!lobby) return;
 
@@ -42,12 +51,11 @@ export default function registerChatHandlers(io, socket, lobbies) {
 
         setTimeout(async () => {
           io.to(roomId).emit("clear_canvas");
-          const { endRound } = await import("./gameHandlers.js");
-          await endRound(roomId, io, lobbies);
+          await endRound(roomId, io, lobbies, wordPools);
         }, 1000);
       }
     } else {
       io.to(roomId).emit("receive_message", { player, message });
     }
   });
-}
+} 

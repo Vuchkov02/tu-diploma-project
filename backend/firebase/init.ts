@@ -9,7 +9,7 @@ const __dirname = dirname(__filename);
 
 let isInitialized = false;
 
-export function initializeFirebase() {
+export function initializeFirebase(): void {
   if (isInitialized || admin.apps.length) return;
 
   const serviceAccount = JSON.parse(
@@ -24,9 +24,9 @@ export function initializeFirebase() {
   console.log("Firebase Admin инициализиран");
 }
 
-export function firestore() {
+export function firestore(): admin.firestore.Firestore {
   if (!admin.apps.length) {
     throw new Error("Firebase не е инициализиран");
   }
   return admin.firestore();
-}
+} 
