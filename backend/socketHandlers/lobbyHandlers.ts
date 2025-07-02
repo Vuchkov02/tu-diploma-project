@@ -1,13 +1,16 @@
-export default function registerLobbyHandlers(io, socket, lobbies) {
-  socket.on("create_lobby", (data, callback) => {
+import { Server, Socket } from "socket.io";
+import { Lobbies, CreateLobbyData, JoinLobbyData, Player, Lobby } from "../types/index.js";
+
+export default function registerLobbyHandlers(io: Server, socket: Socket, lobbies: Lobbies): void {
+  socket.on("create_lobby", (data: CreateLobbyData, callback: (response: { roomId: string }) => void) => {
     const roomId = Math.random().toString(36).substring(7);
-    const player = {
+    const player: Player = {
       id: socket.id,
       name: data.player?.name || "Guest",
       score: 0,
     };
 
-    lobbies[roomId] = {
+    const lobby: Lobby = {
       players: [player],
       hostId: socket.id,
       language: (data.language || "english").toLowerCase(),
@@ -19,6 +22,8 @@ export default function registerLobbyHandlers(io, socket, lobbies) {
       roundStartedAt: null,
       maxPlayers: data.maxPlayers || 4
     };
+
+    lobbies[roomId] = lobby;
 
     socket.join(roomId);
     socket.data.lobbyId = roomId;
@@ -32,7 +37,7 @@ export default function registerLobbyHandlers(io, socket, lobbies) {
     callback({ roomId });
   });
 
-  socket.on("join_lobby", ({ roomId, player }) => {
+  socket.on("join_lobby", ({ roomId, player }: JoinLobbyData) => {
     const lobby = lobbies[roomId];
     if (!lobby) {
       socket.emit("lobby_not_found");
@@ -66,7 +71,7 @@ export default function registerLobbyHandlers(io, socket, lobbies) {
     });
   });
 
-  socket.on("check_lobby_exists", (roomId, callback) => {
+  socket.on("check_lobby_exists", (roomId: string, callback: (exists: boolean) => void) => {
     callback(!!lobbies[roomId]);
   });
 
@@ -98,4 +103,4 @@ export default function registerLobbyHandlers(io, socket, lobbies) {
 
     console.log(`User disconnected: ${socket.id}`);
   });
-}
+} 

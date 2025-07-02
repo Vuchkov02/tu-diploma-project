@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 
 import { initializeFirebase } from "./firebase/init.js";
 import { registerSocketHandlers } from "./socketHandlers/index.js";
+import { Lobbies, WordPools } from "./types/index.js";
 
 dotenv.config();
 initializeFirebase();
@@ -19,8 +20,8 @@ const io = new Server(server, {
 app.use(cors());
 app.get("/", (_, res) => res.send("DRAW & GUESS Server Running..."));
 
-const lobbies = {};
-const wordPools = {};
+const lobbies: Lobbies = {};
+const wordPools: WordPools = {};
 
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
@@ -28,4 +29,4 @@ io.on("connection", (socket) => {
 });
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`)); 
